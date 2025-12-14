@@ -92,7 +92,7 @@ export default function SettingsPage() {
 
   // Update settings mutation
   const updateSettingMutation = useMutation({
-    mutationFn: ({ key, value }: { key: string; value: SiteSettingValue }) =>
+    mutationFn: ({ key, value }: { key: string; value: string }) =>
       api.updateSetting(key, value),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["settings", variables.key] });
@@ -158,11 +158,11 @@ export default function SettingsPage() {
 
     updateSettingMutation.mutate({
       key: "email",
-      value: {
+      value: JSON.stringify({
         enabled: formData.get("enabled") === "on",
         from_email: formData.get("from_email") as string,
         resend_api_key: formData.get("resend_api_key") as string,
-      },
+      }),
     });
   };
 
@@ -183,19 +183,6 @@ export default function SettingsPage() {
       reader.readAsDataURL(file);
     }
   };
-
-  if (storeLoading || whatsappLoading || emailLoading || socialLoading) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="flex items-center space-x-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-primary"></div>
-          <span className="text-lg text-muted-foreground">
-            Loading settings...
-          </span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-8">
@@ -351,9 +338,11 @@ export default function SettingsPage() {
                   <Input
                     id="facebook"
                     name="facebook"
-                    type="url"
+                    type="text"
                     defaultValue={socialValue?.facebook || ""}
-                    placeholder="https://facebook.com/yourpage"
+                    placeholder={
+                      socialValue?.facebook || "Your facebook username"
+                    }
                   />
                 </div>
 
@@ -365,9 +354,11 @@ export default function SettingsPage() {
                   <Input
                     id="instagram"
                     name="instagram"
-                    type="url"
+                    type="text"
                     defaultValue={socialValue?.instagram || ""}
-                    placeholder="https://instagram.com/yourprofile"
+                    placeholder={
+                      socialValue?.instagram || "Your instagram username"
+                    }
                   />
                 </div>
 
@@ -379,9 +370,11 @@ export default function SettingsPage() {
                   <Input
                     id="twitter"
                     name="twitter"
-                    type="url"
+                    type="text"
                     defaultValue={socialValue?.twitter || ""}
-                    placeholder="https://twitter.com/yourprofile"
+                    placeholder={
+                      socialValue?.twitter || "Your twitter username"
+                    }
                   />
                 </div>
 

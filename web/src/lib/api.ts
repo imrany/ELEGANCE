@@ -282,7 +282,7 @@ class ApiClient {
   }
 
   // Admin: Update setting
-  async updateSetting(key: string, value: SiteSettingValue) {
+  async updateSetting(key: string, value: string) {
     return this.request<{ data: SiteSetting }>(`/api/admin/settings/${key}`, {
       method: "PUT",
       body: JSON.stringify({ value }),

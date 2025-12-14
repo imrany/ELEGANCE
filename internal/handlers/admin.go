@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -43,6 +44,12 @@ func (h *AdminHandler) UpdateSetting(c *gin.Context) {
 
 	var req struct {
 		Value string `json:"value" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Println("Failed to bind JSON:", err)
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid request body", err)
+		return
 	}
 
 	// Update the setting
