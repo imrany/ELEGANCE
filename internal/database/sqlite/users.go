@@ -35,14 +35,14 @@ func (sq *SQLiteDB) CreateUser(user *models.User) (*models.User, error) {
 // GetUserByEmail retrieves a user by email
 func (sq *SQLiteDB) GetUserByEmail(email string) (*models.User, error) {
 	query := `
-		SELECT id, email, password, role, created_at, updated_at, first_name, last_name, phone_number
+		SELECT id, email, role, created_at, updated_at, first_name, last_name, phone_number
 		FROM users
 		WHERE email = ?
 	`
 
 	var user models.User
 	err := sq.db.QueryRow(query, email).Scan(
-		&user.ID, &user.Email, &user.Password, &user.Role, &user.CreatedAt, &user.UpdatedAt,
+		&user.ID, &user.Email, &user.Role, &user.CreatedAt, &user.UpdatedAt,
 		&user.FirstName, &user.LastName, &user.PhoneNumber,
 	)
 
@@ -59,14 +59,14 @@ func (sq *SQLiteDB) GetUserByEmail(email string) (*models.User, error) {
 // GetUserByID retrieves a user by ID
 func (sq *SQLiteDB) GetUserByID(id string) (*models.User, error) {
 	query := `
-		SELECT id, email, password, role, created_at, updated_at, first_name, last_name, phone_number
+		SELECT id, email, role, created_at, updated_at, first_name, last_name, phone_number
 		FROM users
 		WHERE id = ?
 	`
 
 	var user models.User
 	err := sq.db.QueryRow(query, id).Scan(
-		&user.ID, &user.Email, &user.Password, &user.Role, &user.CreatedAt, &user.UpdatedAt,
+		&user.ID, &user.Email, &user.Role, &user.CreatedAt, &user.UpdatedAt,
 		&user.FirstName, &user.LastName, &user.PhoneNumber,
 	)
 

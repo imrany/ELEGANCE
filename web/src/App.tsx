@@ -19,6 +19,8 @@ import NotFound from "./pages/NotFound";
 import SetupPage from "./pages/SetupPage";
 import { useEffect, useState } from "react";
 import { api } from "./lib/api";
+import CheckoutPage from "./pages/CheckoutPage";
+import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 
 const queryClient = new QueryClient();
 
@@ -84,6 +86,11 @@ const App = () => {
                     <Route path="/product/:slug" element={<ProductPage />} />
                     <Route path="/cart" element={<CartPage />} />
                     <Route path="/auth" element={<AuthPage />} />
+                    <Route path="/checkout" element={<CheckoutPage />} />
+                    <Route
+                      path="/order-confirmation/:orderId"
+                      element={<OrderConfirmationPage />}
+                    />
 
                     {/* Admin Routes */}
                     <Route path="/admin" element={<AdminLayout />}>

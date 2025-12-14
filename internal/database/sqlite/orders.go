@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -9,48 +10,121 @@ import (
 	"github.com/imrany/ecommerce/internal/models"
 )
 
+// CreateOrder creates a new order with nested customer and shipping information
 func (sq *SQLiteDB) CreateOrder(order *models.Order) error {
 	order.ID = uuid.New().String()
 	order.CreatedAt = time.Now()
 	order.UpdatedAt = time.Now()
 	order.Status = "pending"
-	order.PaymentStatus = "pending"
 
-	_, err := sq.db.Exec(`
-		INSERT INTO orders (id, user_id, customer_name, customer_email, customer_phone,
-			delivery_address, items, subtotal, delivery_fee, total, status, payment_method,
-			payment_status, notes, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, order.ID, order.UserID, order.CustomerName, order.CustomerEmail, order.CustomerPhone,
-		order.DeliveryAddress, order.Items, order.Subtotal, order.DeliveryFee, order.Total,
-		order.Status, order.PaymentMethod, order.PaymentStatus, order.Notes,
-		order.CreatedAt, order.UpdatedAt)
-	return err
+	// Default payment status if not set
+	if order.PaymentStatus == "" {
+		order.PaymentStatus = "pending"
+	}
+
+	// Marshal nested structures to JSON
+	customerJSON, err := json.Marshal(order.Customer)
+	if err != nil {
+		return fmt.Errorf("failed to marshal customer data: %w", err)
+	}
+
+	shippingJSON, err := json.Marshal(order.Shipping)
+	if err != nil {
+		return fmt.Errorf("failed to marshal shipping data: %w", err)
+	}
+
+	itemsJSON, err := json.Marshal(order.Items)
+	if err != nil {
+		return fmt.Errorf("failed to marshal items data: %w", err)
+	}
+
+	query := `
+		INSERT INTO orders (
+			id, customer, shipping, items, subtotal, delivery_fee, total,
+			notes, payment_method, status, payment_status, created_at, updated_at
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`
+
+	_, err = sq.db.Exec(query,
+		order.ID,
+		string(customerJSON),
+		string(shippingJSON),
+		string(itemsJSON),
+		order.Subtotal,
+		order.DeliveryFee,
+		order.Total,
+		order.Notes,
+		order.PaymentMethod,
+		order.Status,
+		order.PaymentStatus,
+		order.CreatedAt,
+		order.UpdatedAt,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to create order: %w", err)
+	}
+
+	return nil
 }
 
+// GetOrderByID retrieves a single order by ID
 func (sq *SQLiteDB) GetOrderByID(id string) (*models.Order, error) {
-	var o models.Order
-	err := sq.db.QueryRow(`
-		SELECT id, user_id, customer_name, customer_email, customer_phone, delivery_address,
-			   items, subtotal, delivery_fee, total, status, payment_method, payment_status,
-			   notes, created_at, updated_at
+	var order models.Order
+	var customerJSON, shippingJSON, itemsJSON string
+
+	query := `
+		SELECT id, customer, shipping, items, subtotal, delivery_fee, total,
+			   notes, payment_method, status, payment_status, created_at, updated_at
 		FROM orders
 		WHERE id = ?
-	`, id).Scan(&o.ID, &o.UserID, &o.CustomerName, &o.CustomerEmail, &o.CustomerPhone,
-		&o.DeliveryAddress, &o.Items, &o.Subtotal, &o.DeliveryFee, &o.Total, &o.Status,
-		&o.PaymentMethod, &o.PaymentStatus, &o.Notes, &o.CreatedAt, &o.UpdatedAt)
+	`
+
+	err := sq.db.QueryRow(query, id).Scan(
+		&order.ID,
+		&customerJSON,
+		&shippingJSON,
+		&itemsJSON,
+		&order.Subtotal,
+		&order.DeliveryFee,
+		&order.Total,
+		&order.Notes,
+		&order.PaymentMethod,
+		&order.Status,
+		&order.PaymentStatus,
+		&order.CreatedAt,
+		&order.UpdatedAt,
+	)
+
 	if err != nil {
-		return nil, err
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("order not found")
+		}
+		return nil, fmt.Errorf("failed to get order: %w", err)
 	}
-	return &o, nil
+
+	// Unmarshal JSON data
+	if err := json.Unmarshal([]byte(customerJSON), &order.Customer); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal customer data: %w", err)
+	}
+
+	if err := json.Unmarshal([]byte(shippingJSON), &order.Shipping); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal shipping data: %w", err)
+	}
+
+	if err := json.Unmarshal([]byte(itemsJSON), &order.Items); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal items data: %w", err)
+	}
+
+	return &order, nil
 }
 
 // GetAllOrders retrieves all orders (admin)
 func (sq *SQLiteDB) GetAllOrders() ([]models.Order, error) {
 	query := `
-		SELECT id, user_id, customer_name, customer_email, customer_phone, delivery_address,
-			   items, subtotal, delivery_fee, total, status, payment_method, payment_status,
-			   notes, created_at, updated_at
+		SELECT id, customer, shipping, items, subtotal, delivery_fee, total,
+			   notes, payment_method, status, payment_status, created_at, updated_at
 		FROM orders
 		ORDER BY created_at DESC
 	`
@@ -63,22 +137,113 @@ func (sq *SQLiteDB) GetAllOrders() ([]models.Order, error) {
 
 	var orders []models.Order
 	for rows.Next() {
-		var o models.Order
+		var order models.Order
+		var customerJSON, shippingJSON, itemsJSON string
+
 		if err := rows.Scan(
-			&o.ID, &o.UserID, &o.CustomerName, &o.CustomerEmail, &o.CustomerPhone,
-			&o.DeliveryAddress, &o.Items, &o.Subtotal, &o.DeliveryFee, &o.Total,
-			&o.Status, &o.PaymentMethod, &o.PaymentStatus, &o.Notes,
-			&o.CreatedAt, &o.UpdatedAt,
+			&order.ID,
+			&customerJSON,
+			&shippingJSON,
+			&itemsJSON,
+			&order.Subtotal,
+			&order.DeliveryFee,
+			&order.Total,
+			&order.Notes,
+			&order.PaymentMethod,
+			&order.Status,
+			&order.PaymentStatus,
+			&order.CreatedAt,
+			&order.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan order: %w", err)
 		}
-		orders = append(orders, o)
+
+		// Unmarshal JSON data
+		if err := json.Unmarshal([]byte(customerJSON), &order.Customer); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal customer data: %w", err)
+		}
+
+		if err := json.Unmarshal([]byte(shippingJSON), &order.Shipping); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal shipping data: %w", err)
+		}
+
+		if err := json.Unmarshal([]byte(itemsJSON), &order.Items); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal items data: %w", err)
+		}
+
+		orders = append(orders, order)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating orders: %w", err)
 	}
 
 	return orders, nil
 }
 
-// UpdateOrderStatus updates an order's status
+// GetOrdersByCustomerEmail retrieves all orders for a specific customer email
+func (sq *SQLiteDB) GetOrdersByCustomerEmail(email string) ([]models.Order, error) {
+	query := `
+		SELECT id, customer, shipping, items, subtotal, delivery_fee, total,
+			   notes, payment_method, status, payment_status, created_at, updated_at
+		FROM orders
+		WHERE json_extract(customer, '$.email') = ?
+		ORDER BY created_at DESC
+	`
+
+	rows, err := sq.db.Query(query, email)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query orders: %w", err)
+	}
+	defer rows.Close()
+
+	var orders []models.Order
+	for rows.Next() {
+		var order models.Order
+		var customerJSON, shippingJSON, itemsJSON string
+
+		if err := rows.Scan(
+			&order.ID,
+			&customerJSON,
+			&shippingJSON,
+			&itemsJSON,
+			&order.Subtotal,
+			&order.DeliveryFee,
+			&order.Total,
+			&order.Notes,
+			&order.PaymentMethod,
+			&order.Status,
+			&order.PaymentStatus,
+			&order.CreatedAt,
+			&order.UpdatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("failed to scan order: %w", err)
+		}
+
+		// Unmarshal JSON data
+		if err := json.Unmarshal([]byte(customerJSON), &order.Customer); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal customer data: %w", err)
+		}
+
+		if err := json.Unmarshal([]byte(shippingJSON), &order.Shipping); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal shipping data: %w", err)
+		}
+
+		if err := json.Unmarshal([]byte(itemsJSON), &order.Items); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal items data: %w", err)
+		}
+
+		orders = append(orders, order)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating orders: %w", err)
+	}
+
+	return orders, nil
+}
+
+// UpdateOrderStatus updates an order's status and payment status
 func (sq *SQLiteDB) UpdateOrderStatus(id, status, paymentStatus string) error {
 	query := `
 		UPDATE orders
@@ -86,9 +251,98 @@ func (sq *SQLiteDB) UpdateOrderStatus(id, status, paymentStatus string) error {
 		WHERE id = ?
 	`
 
-	_, err := sq.db.Exec(query, status, paymentStatus, id)
+	result, err := sq.db.Exec(query, status, paymentStatus, id)
 	if err != nil {
 		return fmt.Errorf("failed to update order status: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get affected rows: %w", err)
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("order not found")
+	}
+
+	return nil
+}
+
+// UpdateOrder updates the entire order
+func (sq *SQLiteDB) UpdateOrder(order *models.Order) error {
+	order.UpdatedAt = time.Now()
+
+	// Marshal nested structures to JSON
+	customerJSON, err := json.Marshal(order.Customer)
+	if err != nil {
+		return fmt.Errorf("failed to marshal customer data: %w", err)
+	}
+
+	shippingJSON, err := json.Marshal(order.Shipping)
+	if err != nil {
+		return fmt.Errorf("failed to marshal shipping data: %w", err)
+	}
+
+	itemsJSON, err := json.Marshal(order.Items)
+	if err != nil {
+		return fmt.Errorf("failed to marshal items data: %w", err)
+	}
+
+	query := `
+		UPDATE orders
+		SET customer = ?, shipping = ?, items = ?, subtotal = ?, delivery_fee = ?,
+			total = ?, notes = ?, payment_method = ?, status = ?, payment_status = ?,
+			updated_at = ?
+		WHERE id = ?
+	`
+
+	result, err := sq.db.Exec(query,
+		string(customerJSON),
+		string(shippingJSON),
+		string(itemsJSON),
+		order.Subtotal,
+		order.DeliveryFee,
+		order.Total,
+		order.Notes,
+		order.PaymentMethod,
+		order.Status,
+		order.PaymentStatus,
+		order.UpdatedAt,
+		order.ID,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to update order: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get affected rows: %w", err)
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("order not found")
+	}
+
+	return nil
+}
+
+// DeleteOrder deletes an order
+func (sq *SQLiteDB) DeleteOrder(id string) error {
+	query := `DELETE FROM orders WHERE id = ?`
+
+	result, err := sq.db.Exec(query, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete order: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get affected rows: %w", err)
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("order not found")
 	}
 
 	return nil

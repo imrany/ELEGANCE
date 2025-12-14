@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Search, Eye, ChevronDown } from "lucide-react";
+import { Search, ChevronDown, MoreVerticalIcon } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,8 +70,9 @@ export default function OrdersPage() {
 
   const filteredOrders = orders?.filter((order) => {
     const matchesSearch =
-      order.customer_name.toLowerCase().includes(search.toLowerCase()) ||
-      order.customer_email.toLowerCase().includes(search.toLowerCase()) ||
+      order.customer.first_name.toLowerCase().includes(search.toLowerCase()) ||
+      order.customer.last_name.toLowerCase().includes(search.toLowerCase()) ||
+      order.customer.email.toLowerCase().includes(search.toLowerCase()) ||
       order.id.toLowerCase().includes(search.toLowerCase());
     const matchesStatus =
       statusFilter === "all" || order.status === statusFilter;
@@ -169,10 +170,10 @@ export default function OrdersPage() {
                     <td className="px-4 py-3">
                       <div>
                         <p className="font-medium text-foreground">
-                          {order.customer_name}
+                          {order.customer.first_name} {order.customer.last_name}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {order.customer_email}
+                          {order.customer.email}
                         </p>
                       </div>
                     </td>
@@ -226,7 +227,7 @@ export default function OrdersPage() {
                           size="icon"
                           onClick={() => setSelectedOrder(order)}
                         >
-                          <Eye className="h-4 w-4" />
+                          <MoreVerticalIcon className="h-4 w-4" />
                         </Button>
                       </div>
                     </td>
@@ -257,19 +258,19 @@ export default function OrdersPage() {
                 <div className="mt-2 space-y-1 text-sm">
                   <p>
                     <span className="text-muted-foreground">Name:</span>{" "}
-                    {selectedOrder.customer_name}
+                    {selectedOrder.customer.first_name}
                   </p>
                   <p>
                     <span className="text-muted-foreground">Email:</span>{" "}
-                    {selectedOrder.customer_email}
+                    {selectedOrder.customer.email}
                   </p>
                   <p>
                     <span className="text-muted-foreground">Phone:</span>{" "}
-                    {selectedOrder.customer_phone}
+                    {selectedOrder.customer.phone_number}
                   </p>
                   <p>
                     <span className="text-muted-foreground">Address:</span>{" "}
-                    {selectedOrder.delivery_address}
+                    {selectedOrder.shipping.address}
                   </p>
                 </div>
               </div>

@@ -299,11 +299,11 @@ func (h *AdminHandler) CreateInitialAdmin(c *gin.Context) {
 	}
 
 	var req struct {
-		Email       string `json:"email"`
-		Password    string `json:"password"`
-		FirstName   string `json:"firstName"`
-		LastName    string `json:"lastName"`
-		PhoneNumber string `json:"phoneNumber"`
+		Email       string `json:"email" binding:"required,email"`
+		Password    string `json:"password" binding:"required,min=6"`
+		FirstName   string `json:"first_name" binding:"required"`
+		LastName    string `json:"last_name" binding:"required"`
+		PhoneNumber string `json:"phone_number" binding:"required"`
 	}
 
 	if err := json.NewDecoder(c.Request.Body).Decode(&req); err != nil {

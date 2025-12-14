@@ -52,17 +52,20 @@ func (h *Handler) GetOrderByID(c *gin.Context) {
 
 // validateOrder validates order fields
 func validateOrder(order *models.Order) error {
-	if strings.TrimSpace(order.CustomerName) == "" {
-		return utils.ErrMissingField("customer_name")
+	if strings.TrimSpace(order.Customer.FirstName) == "" {
+		return utils.ErrMissingField("first_name")
 	}
-	if strings.TrimSpace(order.CustomerEmail) == "" {
-		return utils.ErrMissingField("customer_email")
+	if strings.TrimSpace(order.Customer.LastName) == "" {
+		return utils.ErrMissingField("last_name")
 	}
-	if strings.TrimSpace(order.CustomerPhone) == "" {
-		return utils.ErrMissingField("customer_phone")
+	if strings.TrimSpace(order.Customer.Email) == "" {
+		return utils.ErrMissingField("email")
 	}
-	if strings.TrimSpace(order.DeliveryAddress) == "" {
-		return utils.ErrMissingField("delivery_address")
+	if strings.TrimSpace(order.Customer.PhoneNumber) == "" {
+		return utils.ErrMissingField("phone_number")
+	}
+	if strings.TrimSpace(order.Shipping.Address) == "" {
+		return utils.ErrMissingField("address")
 	}
 	if order.Subtotal <= 0 {
 		return utils.ErrInvalidField("subtotal", "must be greater than 0")

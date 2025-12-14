@@ -34,14 +34,14 @@ func (pg *PostgresDB) CreateUser(user *models.User) (*models.User, error) {
 // GetUserByEmail retrieves a user by email
 func (pg *PostgresDB) GetUserByEmail(email string) (*models.User, error) {
 	query := `
-		SELECT id, email, password, role, created_at, updated_at, first_name, last_name, phone_number
+		SELECT id, email, role, created_at, updated_at, first_name, last_name, phone_number
 		FROM users
 		WHERE email = $1
 	`
 
 	var user models.User
 	err := pg.db.QueryRow(query, email).Scan(
-		&user.ID, &user.Email, &user.Password, &user.Role, &user.CreatedAt, &user.UpdatedAt, &user.FirstName, &user.LastName, &user.PhoneNumber)
+		&user.ID, &user.Email, &user.Role, &user.CreatedAt, &user.UpdatedAt, &user.FirstName, &user.LastName, &user.PhoneNumber)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -56,14 +56,14 @@ func (pg *PostgresDB) GetUserByEmail(email string) (*models.User, error) {
 // GetUserByID retrieves a user by ID
 func (pg *PostgresDB) GetUserByID(id string) (*models.User, error) {
 	query := `
-		SELECT id, email, password, role, created_at, updated_at, first_name, last_name, phone_number
+		SELECT id, email, role, created_at, updated_at, first_name, last_name, phone_number
 		FROM users
 		WHERE id = $1
 	`
 
 	var user models.User
 	err := pg.db.QueryRow(query, id).Scan(
-		&user.ID, &user.Email, &user.Password, &user.Role, &user.CreatedAt, &user.UpdatedAt, &user.FirstName, &user.LastName, &user.PhoneNumber)
+		&user.ID, &user.Email, &user.Role, &user.CreatedAt, &user.UpdatedAt, &user.FirstName, &user.LastName, &user.PhoneNumber)
 
 	if err != nil {
 		if err == sql.ErrNoRows {

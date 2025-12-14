@@ -1,7 +1,6 @@
 package models
 
 import (
-	"encoding/json"
 	"time"
 )
 
@@ -50,23 +49,44 @@ type Product struct {
 }
 
 // Order represents a customer order
+type OrderCustomer struct {
+	UserID      string `json:"user_id"`
+	FirstName   string `json:"first_name"`
+	LastName    string `json:"last_name"`
+	Email       string `json:"email"`
+	PhoneNumber string `json:"phone_number"`
+}
+
+type OrderShipping struct {
+	Address    string `json:"address"`
+	City       string `json:"city"`
+	PostalCode string `json:"postalCode"`
+}
+
+type OrderItem struct {
+	ProductID string  `json:"product_id"`
+	Name      string  `json:"name"`
+	Price     float64 `json:"price"`
+	Quantity  int     `json:"quantity"`
+	Size      string  `json:"size"`
+	Color     string  `json:"color"`
+	Image     string  `json:"image"`
+}
+
 type Order struct {
-	ID              string          `json:"id" db:"id"`
-	UserID          *string         `json:"user_id" db:"user_id"`
-	CustomerName    string          `json:"customer_name" db:"customer_name"`
-	CustomerEmail   string          `json:"customer_email" db:"customer_email"`
-	CustomerPhone   string          `json:"customer_phone" db:"customer_phone"`
-	DeliveryAddress string          `json:"delivery_address" db:"delivery_address"`
-	Items           json.RawMessage `json:"items" db:"items"`
-	Subtotal        float64         `json:"subtotal" db:"subtotal"`
-	DeliveryFee     float64         `json:"delivery_fee" db:"delivery_fee"`
-	Total           float64         `json:"total" db:"total"`
-	Status          string          `json:"status" db:"status"`
-	PaymentMethod   *string         `json:"payment_method" db:"payment_method"`
-	PaymentStatus   string          `json:"payment_status" db:"payment_status"`
-	Notes           *string         `json:"notes" db:"notes"`
-	CreatedAt       time.Time       `json:"created_at" db:"created_at"`
-	UpdatedAt       time.Time       `json:"updated_at" db:"updated_at"`
+	ID            string        `json:"id" db:"id"`
+	Customer      OrderCustomer `json:"customer" db:"customer"` // Assuming nested customer object is stored as JSONB column
+	Shipping      OrderShipping `json:"shipping" db:"shipping"` // Assuming nested shipping object is stored as JSONB column
+	Items         []OrderItem   `json:"items" db:"items"`       // Items are now a slice of OrderItem struct, still likely stored as JSONB
+	Subtotal      float64       `json:"subtotal" db:"subtotal"`
+	DeliveryFee   float64       `json:"delivery_fee" db:"delivery_fee"`
+	Total         float64       `json:"total" db:"total"`
+	Notes         string        `json:"notes" db:"notes"`                   // Changed from *string to string as per prompt
+	PaymentMethod string        `json:"payment_method" db:"payment_method"` // Changed from *string to string as per prompt (Go doesn't have literal types)
+	Status        string        `json:"status" db:"status"`
+	PaymentStatus string        `json:"payment_status" db:"payment_status"` // Changed from *string to string as per prompt (Go doesn't have literal types)`
+	CreatedAt     time.Time     `json:"created_at" db:"created_at"`
+	UpdatedAt     time.Time     `json:"updated_at" db:"updated_at"`
 }
 
 // SiteSetting represents a site configuration setting

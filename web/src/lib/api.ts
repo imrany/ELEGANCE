@@ -48,23 +48,37 @@ export interface Product {
 }
 
 export interface Order {
-  id: string;
-  user_id: string | null;
-  customer_name: string;
-  customer_email: string;
-  customer_phone: string;
-  delivery_address: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  items: any[]; // json.RawMessage maps to any, can be refined if structure is known
+  id: string | null;
+  customer: {
+    user_id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone_number: string;
+  };
+  shipping: {
+    address: string;
+    city: string;
+    postalCode: string;
+  };
+  items: {
+    product_id: string;
+    name: string;
+    price: number;
+    quantity: number;
+    size: string;
+    color: string;
+    image: string;
+  }[];
   subtotal: number;
   delivery_fee: number;
   total: number;
-  status: string;
-  payment_method: string | null;
-  payment_status: string;
-  notes: string | null;
-  created_at: string; // Assuming ISO 8601 string for time.Time
-  updated_at: string; // Assuming ISO 8601 string for time.Time
+  notes: string;
+  payment_method: "mpesa";
+  created_at: string | null;
+  updated_at: string | null;
+  status: "pending" | "complete" | "active";
+  payment_status: "pending" | "paid" | "failed";
 }
 
 export type SiteSettingKeys = {
