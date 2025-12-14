@@ -239,8 +239,10 @@ export default function AccountSettings() {
                         })
                       }
                       className="pl-10"
-                      required
-                      disabled={updateProfileMutation.isPending}
+                      // required
+                      // disabled={updateProfileMutation.isPending}
+                      readOnly
+                      disabled
                     />
                   </div>
                 </div>

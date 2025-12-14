@@ -511,7 +511,11 @@ func (h *AdminHandler) GetUserOrders(c *gin.Context) {
 }
 
 func (h *AdminHandler) UpdateUserPassword(c *gin.Context) {
-	userID := c.Param("userId")
+	userID, exists := c.Get("user_id")
+	if !exists {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated", nil)
+		return
+	}
 	// Convert user_id to string
 	userIDStr := fmt.Sprintf("%v", userID)
 	var req struct {
