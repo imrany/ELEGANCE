@@ -151,6 +151,7 @@ func (s *Server) setupRoutes() {
 
 			// Images management
 			admin.POST("/upload/image", adminHandler.UploadImage)
+			admin.DELETE("/images/:filename", adminHandler.DeleteImage)
 
 			// Settings management
 			admin.PUT("/settings/:key", adminHandler.UpdateSetting)

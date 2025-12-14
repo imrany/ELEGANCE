@@ -463,3 +463,24 @@ func DeleteFile(userID, filename string) error {
 
 	return nil
 }
+
+// DeleteImage deletes an image from the server.
+func (h *AdminHandler) DeleteImage(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated", nil)
+		return
+	}
+	// Convert user_id to string
+	userIDStr := fmt.Sprintf("%v", userID)
+	filename := c.Param("filename")
+
+	if err := DeleteFile(userIDStr, filename); err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to delete image", err)
+		return
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, gin.H{
+		"message": "Image deleted successfully",
+	})
+}

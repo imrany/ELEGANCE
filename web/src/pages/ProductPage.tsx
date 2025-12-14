@@ -47,7 +47,7 @@ export default function ProductPage() {
           </h1>
           <Button
             asChild
-            className="mt-6 text-primary underline hover:text-primary/90"
+            className="mt-6 text-primary-foreground hover:text-primary-foreground"
           >
             <Link to="/">Return Home</Link>
           </Button>

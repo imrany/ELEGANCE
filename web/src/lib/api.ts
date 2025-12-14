@@ -260,22 +260,23 @@ class ApiClient {
     });
   }
 
-  // Products
+  // Products (admin)
   async createProduct(productData: Product) {
-    return this.request<{ data: Product }>("/api/products", {
+    console.log("Creating product:", productData);
+    return this.request<{ data: Product }>("/api/admin/products", {
       method: "POST",
       body: JSON.stringify(productData),
     });
   }
 
   async deleteProduct(id: string) {
-    return this.request<{ data: string }>(`/api/products/${id}`, {
+    return this.request<{ data: string }>(`/api/admin/products/${id}`, {
       method: "DELETE",
     });
   }
 
   async updateProduct(id: string, productData: Product) {
-    return this.request<{ data: Product }>(`/api/products/${id}`, {
+    return this.request<{ data: Product }>(`/api/admin/products/${id}`, {
       method: "PUT",
       body: JSON.stringify(productData),
     });
@@ -308,6 +309,12 @@ class ApiClient {
     }>(`/api/admin/upload/image`, {
       method: "POST",
       body: formData,
+    });
+  }
+
+  async deleteImage(filename: string) {
+    return this.request<{ data: string }>(`/api/admin/images/${filename}`, {
+      method: "DELETE",
     });
   }
 
