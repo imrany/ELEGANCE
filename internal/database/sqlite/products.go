@@ -2,7 +2,10 @@ package sqlite
 
 import (
 	"encoding/json"
+	"fmt"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/imrany/ecommerce/internal/models"
 )
 
@@ -103,4 +106,87 @@ func (sq *SQLiteDB) GetFeaturedProducts() ([]models.Product, error) {
 func (sq *SQLiteDB) GetNewProducts() ([]models.Product, error) {
 	isNew := true
 	return sq.GetProducts(models.ProductFilters{IsNew: &isNew, Limit: 10})
+}
+
+// CreateProduct creates a new product
+func (sq *SQLiteDB) CreateProduct(product *models.Product) error {
+	product.ID = uuid.New().String()
+	product.CreatedAt = time.Now()
+	product.UpdatedAt = time.Now()
+
+	// Convert slices to JSON strings for SQLite
+	images, _ := json.Marshal(product.Images)
+	sizes, _ := json.Marshal(product.Sizes)
+	colors, _ := json.Marshal(product.Colors)
+
+	query := `
+		INSERT INTO products (id, name, slug, description, price, original_price, category_id,
+			images, sizes, colors, stock, featured, is_new, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`
+
+	_, err := sq.db.Exec(query,
+		product.ID, product.Name, product.Slug, product.Description,
+		product.Price, product.OriginalPrice, product.CategoryID,
+		images, sizes, colors, product.Stock, product.Featured, product.IsNew,
+		product.CreatedAt, product.UpdatedAt,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to create product: %w", err)
+	}
+
+	return nil
+}
+
+// UpdateProduct updates an existing product
+func (sq *SQLiteDB) UpdateProduct(product *models.Product) error {
+	product.UpdatedAt = time.Now()
+
+	// Convert slices to JSON strings for SQLite
+	images, _ := json.Marshal(product.Images)
+	sizes, _ := json.Marshal(product.Sizes)
+	colors, _ := json.Marshal(product.Colors)
+
+	query := `
+		UPDATE products
+		SET name = ?, slug = ?, description = ?, price = ?, original_price = ?,
+			category_id = ?, images = ?, sizes = ?, colors = ?, stock = ?,
+			featured = ?, is_new = ?, updated_at = ?
+		WHERE id = ?
+	`
+
+	_, err := sq.db.Exec(query,
+		product.Name, product.Slug, product.Description,
+		product.Price, product.OriginalPrice, product.CategoryID,
+		images, sizes, colors, product.Stock, product.Featured, product.IsNew,
+		product.UpdatedAt, product.ID,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to update product: %w", err)
+	}
+
+	return nil
+}
+
+// DeleteProduct deletes a product
+func (sq *SQLiteDB) DeleteProduct(id string) error {
+	query := `DELETE FROM products WHERE id = ?`
+
+	result, err := sq.db.Exec(query, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete product: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get affected rows: %w", err)
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("product not found")
+	}
+
+	return nil
 }

@@ -1,7 +1,6 @@
 package postgres
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -69,129 +68,53 @@ func (pg *PostgresDB) CreateOrder(order *models.Order) error {
 	return nil
 }
 
-// GetOrderByID retrieves a single order by ID
-func (pg *PostgresDB) GetOrderByID(id string) (*models.Order, error) {
-	var order models.Order
-	var customerJSON, shippingJSON, itemsJSON []byte
+// We need to change the function signature to take a key (column) and a value (search term).
+// The value can be a pointer if it's optional. The key should be a string.
+func (pg *PostgresDB) GetOrdersByOption(key string, value *string) ([]models.Order, error) {
+	// Base query structure
+	baseQuery := `
+			SELECT id, customer, shipping, items, subtotal, delivery_fee, total,
+						   notes, payment_method, status, payment_status, created_at, updated_at
+					FROM orders
+		`
 
-	query := `
-		SELECT id, customer, shipping, items, subtotal, delivery_fee, total,
-			   notes, payment_method, status, payment_status, created_at, updated_at
-		FROM orders
-		WHERE id = $1
-	`
+	// Start building dynamic query parts
+	whereClause := ""
+	args := []any{}
 
-	err := pg.db.QueryRow(query, id).Scan(
-		&order.ID,
-		&customerJSON,
-		&shippingJSON,
-		&itemsJSON,
-		&order.Subtotal,
-		&order.DeliveryFee,
-		&order.Total,
-		&order.Notes,
-		&order.PaymentMethod,
-		&order.Status,
-		&order.PaymentStatus,
-		&order.CreatedAt,
-		&order.UpdatedAt,
-	)
-
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("order not found")
-		}
-		return nil, fmt.Errorf("failed to get order: %w", err)
+	// Validate the input key against a whitelist to prevent SQL injection vulnerabilities
+	validColumns := map[string]string{
+		"id":             "id",
+		"status":         "status",
+		"payment_status": "payment_status",
+		"created_at":     "created_at",
+		"updated_at":     "updated_at",
+		"email":          "customer->>'email'",
+		"user_id":        "customer->>'user_id'",
+		"phone_number":   "customer->>'phone_number'",
+		"first_name":     "customer->>'first_name'",
+		"last_name":      "customer->>'last_name'",
+		"address":        "customer->>'address'",
+		"city":           "customer->>'city'",
 	}
 
-	// Unmarshal JSON data
-	if err := json.Unmarshal(customerJSON, &order.Customer); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal customer data: %w", err)
-	}
-
-	if err := json.Unmarshal(shippingJSON, &order.Shipping); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal shipping data: %w", err)
-	}
-
-	if err := json.Unmarshal(itemsJSON, &order.Items); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal items data: %w", err)
-	}
-
-	return &order, nil
-}
-
-// GetAllOrders retrieves all orders (admin)
-func (pg *PostgresDB) GetAllOrders() ([]models.Order, error) {
-	query := `
-		SELECT id, customer, shipping, items, subtotal, delivery_fee, total,
-			   notes, payment_method, status, payment_status, created_at, updated_at
-		FROM orders
-		ORDER BY created_at DESC
-	`
-
-	rows, err := pg.db.Query(query)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query orders: %w", err)
-	}
-	defer rows.Close()
-
-	var orders []models.Order
-	for rows.Next() {
-		var order models.Order
-		var customerJSON, shippingJSON, itemsJSON []byte
-
-		if err := rows.Scan(
-			&order.ID,
-			&customerJSON,
-			&shippingJSON,
-			&itemsJSON,
-			&order.Subtotal,
-			&order.DeliveryFee,
-			&order.Total,
-			&order.Notes,
-			&order.PaymentMethod,
-			&order.Status,
-			&order.PaymentStatus,
-			&order.CreatedAt,
-			&order.UpdatedAt,
-		); err != nil {
-			return nil, fmt.Errorf("failed to scan order: %w", err)
+	if value != nil && key != "" {
+		dbColumn, ok := validColumns[key]
+		if !ok {
+			return nil, fmt.Errorf("invalid search key: %s", key)
 		}
 
-		// Unmarshal JSON data
-		if err := json.Unmarshal(customerJSON, &order.Customer); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal customer data: %w", err)
-		}
-
-		if err := json.Unmarshal(shippingJSON, &order.Shipping); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal shipping data: %w", err)
-		}
-
-		if err := json.Unmarshal(itemsJSON, &order.Items); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal items data: %w", err)
-		}
-
-		orders = append(orders, order)
+		// Add the specific WHERE condition
+		whereClause = fmt.Sprintf(" WHERE %s = ?", dbColumn)
+		args = append(args, *value)
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating orders: %w", err)
-	}
+	// Finalize the query
+	query := baseQuery + whereClause + " ORDER BY created_at DESC"
 
-	return orders, nil
-}
+	// Execute the query using the dynamic arguments slice
+	rows, err := pg.db.Query(query, args...)
 
-// GetOrdersByCustomerEmail retrieves all orders for a specific customer email
-func (pg *PostgresDB) GetOrdersByCustomerEmail(email string) ([]models.Order, error) {
-	query := `
-		SELECT id, customer, shipping, items, subtotal, delivery_fee, total,
-			   notes, payment_method, status, payment_status, created_at, updated_at
-		FROM orders
-		WHERE customer->>'email' = $1
-		ORDER BY created_at DESC
-	`
-
-	rows, err := pg.db.Query(query, email)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query orders: %w", err)
 	}
@@ -346,120 +269,4 @@ func (pg *PostgresDB) DeleteOrder(id string) error {
 	}
 
 	return nil
-}
-
-// CreateProduct creates a new product
-func (pg *PostgresDB) CreateProduct(product *models.Product) error {
-	product.ID = uuid.New().String()
-	product.CreatedAt = time.Now()
-	product.UpdatedAt = time.Now()
-
-	// Convert slices to PostgreSQL arrays
-	images, _ := json.Marshal(product.Images)
-	sizes, _ := json.Marshal(product.Sizes)
-	colors, _ := json.Marshal(product.Colors)
-
-	query := `
-		INSERT INTO products (id, name, slug, description, price, original_price, category_id,
-			images, sizes, colors, stock, featured, is_new, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-	`
-
-	_, err := pg.db.Exec(query,
-		product.ID, product.Name, product.Slug, product.Description,
-		product.Price, product.OriginalPrice, product.CategoryID,
-		images, sizes, colors, product.Stock, product.Featured, product.IsNew,
-		product.CreatedAt, product.UpdatedAt,
-	)
-
-	if err != nil {
-		return fmt.Errorf("failed to create product: %w", err)
-	}
-
-	return nil
-}
-
-// UpdateProduct updates an existing product
-func (pg *PostgresDB) UpdateProduct(product *models.Product) error {
-	product.UpdatedAt = time.Now()
-
-	// Convert slices to PostgreSQL arrays
-	images, _ := json.Marshal(product.Images)
-	sizes, _ := json.Marshal(product.Sizes)
-	colors, _ := json.Marshal(product.Colors)
-
-	query := `
-		UPDATE products
-		SET name = $1, slug = $2, description = $3, price = $4, original_price = $5,
-			category_id = $6, images = $7, sizes = $8, colors = $9, stock = $10,
-			featured = $11, is_new = $12, updated_at = $13
-		WHERE id = $14
-	`
-
-	_, err := pg.db.Exec(query,
-		product.Name, product.Slug, product.Description,
-		product.Price, product.OriginalPrice, product.CategoryID,
-		images, sizes, colors, product.Stock, product.Featured, product.IsNew,
-		product.UpdatedAt, product.ID,
-	)
-
-	if err != nil {
-		return fmt.Errorf("failed to update product: %w", err)
-	}
-
-	return nil
-}
-
-// DeleteProduct deletes a product
-func (pg *PostgresDB) DeleteProduct(id string) error {
-	query := `DELETE FROM products WHERE id = $1`
-
-	result, err := pg.db.Exec(query, id)
-	if err != nil {
-		return fmt.Errorf("failed to delete product: %w", err)
-	}
-
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("failed to get affected rows: %w", err)
-	}
-
-	if rows == 0 {
-		return fmt.Errorf("product not found")
-	}
-
-	return nil
-}
-
-// GetUserOrders retrieves orders for a specific user
-func (pg *PostgresDB) GetUserOrders(userId string) ([]models.Order, error) {
-	query := `
-		SELECT id, user_id, status, total_price, created_at, updated_at
-		FROM orders
-		WHERE user_id = $1
-	`
-
-	rows, err := pg.db.Query(query, userId)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user orders: %w", err)
-	}
-	defer rows.Close()
-
-	var orders []models.Order
-	for rows.Next() {
-		var order models.Order
-		if err := rows.Scan(
-			&order.ID, &order.Customer.UserID, &order.Status, &order.Total,
-			&order.CreatedAt, &order.UpdatedAt,
-		); err != nil {
-			return nil, fmt.Errorf("failed to scan order: %w", err)
-		}
-		orders = append(orders, order)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("failed to iterate over rows: %w", err)
-	}
-
-	return orders, nil
 }

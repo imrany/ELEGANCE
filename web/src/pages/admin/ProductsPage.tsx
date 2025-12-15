@@ -30,6 +30,7 @@ import { api, Product } from "@/lib/api";
 import { useCategories } from "@/hooks/useCategories";
 import { ProductForm } from "@/components/ProductForm";
 import { cn } from "@/lib/utils";
+import { is } from "zod/v4/locales";
 
 export default function ProductsPage() {
   const queryClient = useQueryClient();
@@ -110,15 +111,17 @@ export default function ProductsPage() {
 
         {/* Search and Stats */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative w-full sm:max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search products..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          {!isLoading && products && (
+            <div className="relative w-full sm:max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search products..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          )}
 
           {!isLoading && products && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -33,21 +34,75 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusCreated, order)
 }
 
-// GetOrderByID handles GET /api/orders/:id
-func (h *Handler) GetOrderByID(c *gin.Context) {
-	id := c.Param("id")
+// GetOrdersByUserID handles GET /api/order/user/?key=user_id&&value=123
+func (h *Handler) GetOrdersByOption(c *gin.Context) {
+	value := c.Query("value")
+	key := c.Query("key")
 
-	order, err := h.db.GetOrderByID(id)
+	val := &value
+	if value == "" {
+		val = nil
+	}
+
+	userID, exists := c.Get("user_id")
+	if !exists {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated", nil)
+		return
+	}
+	userIDStr := fmt.Sprintf("%v", userID)
+	_, err := h.db.GetUserByID(userIDStr)
 	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to fetch user", err)
+		return
+	}
+
+	orders, err := h.db.GetOrdersByOption(key, val)
+	if err != nil {
+		if err.Error() == "user not found" || err == sql.ErrNoRows {
+			utils.ErrorResponse(c, http.StatusNotFound, "User not found", err)
+			return
+		}
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to fetch orders", err)
+		return
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, orders)
+}
+
+// UpdateOrder handles PUT /api/orders
+func (h *Handler) UpdateOrder(c *gin.Context) {
+	var order models.Order
+	if err := c.ShouldBindJSON(&order); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid request body", err)
+		return
+	}
+
+	if err := h.db.UpdateOrder(&order); err != nil {
 		if err.Error() == "order not found" || err == sql.ErrNoRows {
 			utils.ErrorResponse(c, http.StatusNotFound, "Order not found", err)
 			return
 		}
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to fetch order", err)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to update order", err)
 		return
 	}
 
 	utils.SuccessResponse(c, http.StatusOK, order)
+}
+
+// DeleteOrder handles DELETE /api/orders/:id
+func (h *Handler) DeleteOrder(c *gin.Context) {
+	id := c.Param("id")
+
+	if err := h.db.DeleteOrder(id); err != nil {
+		if err.Error() == "order not found" || err == sql.ErrNoRows {
+			utils.ErrorResponse(c, http.StatusNotFound, "Order not found", err)
+			return
+		}
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to delete order", err)
+		return
+	}
+
+	utils.SuccessResponse(c, http.StatusNoContent, nil)
 }
 
 // validateOrder validates order fields

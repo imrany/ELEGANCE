@@ -5,6 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { OrderProvider } from "@/contexts/OrderContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { GuestRoute } from "@/components/GuestRoute";
 import Index from "./pages/Index";
 import CategoryPage from "./pages/CategoryPage";
 import ProductPage from "./pages/ProductPage";
@@ -13,16 +16,17 @@ import AuthPage from "./pages/AuthPage";
 import AdminLayout from "./pages/admin/AdminLayout";
 import DashboardPage from "./pages/admin/DashboardPage";
 import ProductsPage from "./pages/admin/ProductsPage";
-import OrdersPage from "./pages/admin/OrdersPage";
+import OrdersAdminPage from "./pages/admin/OrdersAdminPage";
 import SettingsPage from "./pages/admin/SettingsPage";
 import NotFound from "./pages/NotFound";
 import SetupPage from "./pages/SetupPage";
-import { useEffect, useState } from "react";
-import { api } from "./lib/api";
 import CheckoutPage from "./pages/CheckoutPage";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage";
-import UsersManagement from "./pages/admin/UsersManagement";
 import AccountSettings from "./pages/admin/AccountSettings";
+import OrdersPage from "./pages/OrdersPage";
+import { useEffect, useState } from "react";
+import { api } from "./lib/api";
+import UsersPage from "./pages/admin/UsersPage";
 
 const queryClient = new QueryClient();
 
@@ -62,55 +66,100 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <CartProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner closeButton={true} theme="light" />
-            <BrowserRouter>
-              <Routes>
-                {/* If setup is needed, redirect all routes to setup */}
-                {setupNeeded ? (
-                  <>
-                    <Route path="/setup" element={<SetupPage />} />
-                    <Route
-                      path="*"
-                      element={<Navigate to="/setup" replace />}
-                    />
-                  </>
-                ) : (
-                  <>
-                    {/* Setup complete - normal routes */}
-                    <Route
-                      path="/setup"
-                      element={<Navigate to="/" replace />}
-                    />
-                    <Route path="/" element={<Index />} />
-                    <Route path="/category/:slug" element={<CategoryPage />} />
-                    <Route path="/product/:slug" element={<ProductPage />} />
-                    <Route path="/cart" element={<CartPage />} />
-                    <Route path="/auth" element={<AuthPage />} />
-                    <Route path="/checkout" element={<CheckoutPage />} />
-                    <Route
-                      path="/order-confirmation/:orderId"
-                      element={<OrderConfirmationPage />}
-                    />
+          <OrderProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner closeButton={true} theme="light" />
+              <BrowserRouter>
+                <Routes>
+                  {/* If setup is needed, redirect all routes to setup */}
+                  {setupNeeded ? (
+                    <>
+                      <Route path="/setup" element={<SetupPage />} />
+                      <Route
+                        path="*"
+                        element={<Navigate to="/setup" replace />}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      {/* Setup complete - normal routes */}
+                      <Route
+                        path="/setup"
+                        element={<Navigate to="/" replace />}
+                      />
 
-                    {/* Admin Routes */}
-                    <Route path="/admin" element={<AdminLayout />}>
-                      <Route index element={<DashboardPage />} />
-                      <Route path="products" element={<ProductsPage />} />
-                      <Route path="orders" element={<OrdersPage />} />
-                      <Route path="users" element={<UsersManagement />} />
-                      <Route path="account" element={<AccountSettings />} />
-                      <Route path="settings" element={<SettingsPage />} />
-                    </Route>
+                      {/* Public Routes */}
+                      <Route path="/" element={<Index />} />
+                      <Route
+                        path="/category/:slug"
+                        element={<CategoryPage />}
+                      />
+                      <Route path="/product/:slug" element={<ProductPage />} />
+                      <Route path="/cart" element={<CartPage />} />
 
-                    {/* Catch-all 404 */}
-                    <Route path="*" element={<NotFound />} />
-                  </>
-                )}
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
+                      {/* Guest Only Routes (redirect to home if logged in) */}
+                      <Route
+                        path="/auth"
+                        element={
+                          <GuestRoute>
+                            <AuthPage />
+                          </GuestRoute>
+                        }
+                      />
+
+                      {/* Protected Customer Routes (require login) */}
+                      <Route
+                        path="/checkout"
+                        element={
+                          <ProtectedRoute>
+                            <CheckoutPage />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/orders"
+                        element={
+                          <ProtectedRoute>
+                            <OrdersPage />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/order-confirmation/:orderId"
+                        element={
+                          <ProtectedRoute>
+                            <OrderConfirmationPage />
+                          </ProtectedRoute>
+                        }
+                      />
+
+                      {/* Admin Routes (require admin role) */}
+                      <Route
+                        path="/admin"
+                        element={
+                          <ProtectedRoute requireAdmin>
+                            <AdminLayout />
+                          </ProtectedRoute>
+                        }
+                      >
+                        <Route index element={<DashboardPage />} />
+                        <Route path="products" element={<ProductsPage />} />
+                        <Route path="orders" element={<OrdersAdminPage />} />
+                        {/*<Route path="users" element={<UsersManagement />} />*/}
+                        <Route path="users" element={<UsersPage />} />
+                        <Route path="account" element={<AccountSettings />} />
+                        <Route path="settings" element={<SettingsPage />} />
+                      </Route>
+
+                      {/* Catch-all 404 */}
+                      <Route path="*" element={<NotFound />} />
+                    </>
+                  )}
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </OrderProvider>
         </CartProvider>
       </AuthProvider>
     </QueryClientProvider>

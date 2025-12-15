@@ -77,7 +77,7 @@ export interface Order {
   payment_method: "mpesa";
   created_at: string | null;
   updated_at: string | null;
-  status: "pending" | "complete" | "active";
+  status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
   payment_status: "pending" | "paid" | "failed";
 }
 
@@ -257,8 +257,11 @@ class ApiClient {
     });
   }
 
-  async getOrder(id: string) {
-    return this.request<{ data: Order }>(`/api/orders/${id}`);
+  // /api/orders?key=user_id&&value=123
+  async getOrders(key?: string, value?: string) {
+    return this.request<{ data: Order[] }>(
+      `/api/orders?key=${key || ""}&value=${value || ""}`,
+    );
   }
 
   async updateOrderStatus(
@@ -271,6 +274,19 @@ class ApiClient {
     return this.request<{ data: Order }>(`/api/orders/${id}/status`, {
       method: "PUT",
       body: JSON.stringify(orderStatus),
+    });
+  }
+
+  async deleteOrder(id: string) {
+    return this.request<{ data: string }>(`/api/orders/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  async updateOrder(id: string, orderData: Order) {
+    return this.request<{ data: Order }>(`/api/orders/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(orderData),
     });
   }
 

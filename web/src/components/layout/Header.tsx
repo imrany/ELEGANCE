@@ -1,5 +1,12 @@
 import { Link } from "react-router-dom";
-import { ShoppingBag, Search, Menu, User, LogOut } from "lucide-react";
+import {
+  ShoppingBag,
+  Search,
+  Menu,
+  User,
+  LogOut,
+  ShoppingCart,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -13,6 +20,7 @@ import { useState } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSiteSetting } from "@/hooks/useSiteSetting";
+import { useOrder } from "@/contexts/OrderContext";
 
 const navLinks = [
   { name: "Home", href: "/" },
@@ -25,6 +33,7 @@ const navLinks = [
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const { itemCount } = useCart();
+  const { orderCount } = useOrder();
   const { user, isAdmin, signOut } = useAuth();
   const { data: setting, isLoading } = useSiteSetting("store");
   const value = (() => {
@@ -125,24 +134,41 @@ export function Header() {
             <span className="sr-only">Search</span>
           </Button>
           {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <User className="h-5 w-5" />
-                  <span className="sr-only">Account</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                  {user.email}
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={signOut} className="cursor-pointer">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <User className="h-5 w-5" />
+                    <span className="sr-only">Account</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                    {user.email}
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={signOut}
+                    className="cursor-pointer"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <Button variant="ghost" size="icon" className="relative" asChild>
+                <Link to="/orders">
+                  <ShoppingCart className="h-5 w-5" />
+                  {orderCount > 0 && (
+                    <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-medium text-accent-foreground">
+                      {orderCount}
+                    </span>
+                  )}
+                  <span className="sr-only">Orders page</span>
+                </Link>
+              </Button>
+            </>
           ) : (
             <Button variant="ghost" size="icon" asChild>
               <Link to="/auth">

@@ -28,14 +28,15 @@ type DB interface {
 
 	// Order operations
 	CreateOrder(order *models.Order) error
-	GetOrderByID(id string) (*models.Order, error)
+	GetOrdersByOption(key string, value *string) ([]models.Order, error)
+	DeleteOrder(id string) error
+	UpdateOrder(order *models.Order) error
 
 	// Settings operations
 	GetSiteSetting(key string) (*models.SiteSetting, error)
 	UpdateSiteSetting(key string, value string) error
 
 	// Admin operations
-	GetAllOrders() ([]models.Order, error)
 	UpdateOrderStatus(id, status, paymentStatus string) error
 	CreateProduct(product *models.Product) error
 	UpdateProduct(product *models.Product) error
@@ -45,7 +46,6 @@ type DB interface {
 	GetAllUsers() ([]models.User, error)
 	UpdateUserRole(id, role string) error
 	DeleteUser(id string) error
-	GetUserOrders(userId string) ([]models.Order, error)
 
 	// setup  (initial)
 	GetSetupStatus() (*models.SetupStatus, error)

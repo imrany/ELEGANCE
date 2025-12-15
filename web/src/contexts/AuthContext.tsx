@@ -30,6 +30,7 @@ interface AuthContextType {
     phone_number: string,
   ) => Promise<{ error?: { message: string } }>;
   signOut: () => void;
+  updateUser: (user: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -89,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   ) => {
     try {
       await api.signUp(email, password, first_name, last_name, phone_number);
+      // Auto sign in after signup
       return {};
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
@@ -106,6 +108,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = () => {
     localStorage.removeItem("auth_token");
     setUser(null);
+    // Redirect to home page
+    window.location.href = "/";
   };
 
   const createInitialAdmin = async (
@@ -123,7 +127,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         lastName,
         phoneNumber,
       );
-
       setUser(data.admin);
       localStorage.setItem("auth_token", data.token);
       return {};
@@ -141,6 +144,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateUser = (updatedUser: User) => {
+    setUser(updatedUser);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -150,6 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signUp,
         signOut,
         createInitialAdmin,
+        updateUser,
         isAdmin: user?.role === "admin",
       }}
     >

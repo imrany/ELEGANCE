@@ -41,8 +41,8 @@ export default function OrderConfirmationPage() {
   } = useQuery<Order>({
     queryKey: ["order", orderId],
     queryFn: async () => {
-      const response = await api.getOrder(orderId!);
-      return response.data;
+      const { data: orders } = await api.getOrders("id", orderId!);
+      return orders[0];
     },
     enabled: !!orderId,
     refetchInterval: 5000, // Refetch every 5 seconds to check payment status
@@ -124,7 +124,7 @@ export default function OrderConfirmationPage() {
       <Layout>
         <div className="container flex min-h-[60vh] items-center justify-center py-12">
           <div className="text-center">
-            <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
+            <Loader2 className="mx-auto h-12 w-12 animate-spin text-accent" />
             <p className="mt-4 text-muted-foreground">
               Loading order details...
             </p>

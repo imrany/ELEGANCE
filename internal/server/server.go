@@ -124,7 +124,10 @@ func (s *Server) setupRoutes() {
 
 			// Orders
 			authenticated.POST("/orders", s.handler.CreateOrder)
-			authenticated.GET("/orders/:id", s.handler.GetOrderByID)
+			// /api/orders?key=user_id&&value=123
+			authenticated.GET("/orders", s.handler.GetOrdersByOption)
+			authenticated.DELETE("/orders/:id", s.handler.DeleteOrder)
+			authenticated.PUT("/orders/:id", s.handler.UpdateOrder)
 		}
 
 		// Admin routes (require admin role)

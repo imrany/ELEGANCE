@@ -36,7 +36,7 @@ func NewAdminHandler(db database.DB, jwtSecret string) *AdminHandler {
 
 // GetAllOrders retrieves all orders (admin only)
 func (h *AdminHandler) GetAllOrders(c *gin.Context) {
-	orders, err := h.db.GetAllOrders()
+	orders, err := h.db.GetOrdersByOption("", nil)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to fetch orders", err)
 		return
@@ -203,7 +203,7 @@ func (h *AdminHandler) UpdateOrderStatus(c *gin.Context) {
 		return
 	}
 
-	order, err := h.db.GetOrderByID(id)
+	order, err := h.db.GetOrdersByOption("id", &id)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to fetch updated order", err)
 		return
@@ -500,13 +500,11 @@ func (h *AdminHandler) GetUserOrders(c *gin.Context) {
 	// Convert user_id to string
 	userIDStr := fmt.Sprintf("%v", userID)
 
-	if orders, err := h.db.GetUserOrders(userIDStr); err != nil {
+	if orders, err := h.db.GetOrdersByOption("user_id", &userIDStr); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get user orders", err)
 		return
 	} else {
-		utils.SuccessResponse(c, http.StatusOK, gin.H{
-			"data": orders,
-		})
+		utils.SuccessResponse(c, http.StatusOK, orders)
 	}
 }
 

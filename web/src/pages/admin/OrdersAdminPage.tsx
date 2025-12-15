@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Search, ChevronDown, MoreVerticalIcon } from "lucide-react";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, statusColors } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -28,15 +28,7 @@ import {
 import { toast } from "sonner";
 import { api, Order } from "@/lib/api";
 
-const statusColors: Record<string, string> = {
-  pending: "bg-yellow-500/10 text-yellow-600",
-  processing: "bg-blue-500/10 text-blue-600",
-  shipped: "bg-purple-500/10 text-purple-600",
-  delivered: "bg-green-500/10 text-green-600",
-  cancelled: "bg-red-500/10 text-red-600",
-};
-
-export default function OrdersPage() {
+export default function OrdersAdminPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -89,30 +81,32 @@ export default function OrdersPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col gap-4 sm:flex-row">
-        <div className="relative flex-1 sm:max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search by name, email, or order ID..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
+      {!isLoading && orders && (
+        <div className="flex flex-col gap-4 sm:flex-row">
+          <div className="relative flex-1 sm:max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search by name, email, or order ID..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-40">
+              <SelectValue placeholder="All statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="processing">Processing</SelectItem>
+              <SelectItem value="shipped">Shipped</SelectItem>
+              <SelectItem value="delivered">Delivered</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-40">
-            <SelectValue placeholder="All statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="processing">Processing</SelectItem>
-            <SelectItem value="shipped">Shipped</SelectItem>
-            <SelectItem value="delivered">Delivered</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      )}
 
       {/* Orders Table */}
       <div className="rounded-lg border border-border bg-background">
@@ -163,8 +157,8 @@ export default function OrdersPage() {
                 filteredOrders?.map((order) => (
                   <tr key={order.id} className="hover:bg-secondary/30">
                     <td className="px-4 py-3">
-                      <span className="font-mono text-sm text-foreground">
-                        #{order.id.slice(0, 8)}
+                      <span className="font-mono text-sm text-muted-foreground">
+                        #{order.id.slice(0, 8)}...
                       </span>
                     </td>
                     <td className="px-4 py-3">
