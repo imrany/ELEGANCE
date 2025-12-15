@@ -1,6 +1,10 @@
 package postgres
 
-import "github.com/imrany/ecommerce/internal/models"
+import (
+	"time"
+
+	"github.com/imrany/ecommerce/internal/models"
+)
 
 func (pg *PostgresDB) GetCategories() ([]models.Category, error) {
 	rows, err := pg.db.Query(`
@@ -35,4 +39,32 @@ func (pg *PostgresDB) GetCategoryBySlug(slug string) (*models.Category, error) {
 		return nil, err
 	}
 	return &c, nil
+}
+
+func (pg *PostgresDB) CreateCategory(category *models.Category) (*models.Category, error) {
+	_, err := pg.db.Exec(`
+		INSERT INTO categories (id, name, slug, description, image_url, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+	`, category.ID, category.Name, category.Slug, category.Description, category.ImageURL, time.Now(), time.Now())
+	if err != nil {
+		return nil, err
+	}
+	return category, nil
+}
+
+func (pg *PostgresDB) UpdateCategory(category *models.Category) error {
+	_, err := pg.db.Exec(`
+		UPDATE categories
+		SET name = $1, slug = $2, description = $3, image_url = $4, updated_at = $5
+		WHERE id = $6
+	`, category.Name, category.Slug, category.Description, category.ImageURL, time.Now(), category.ID)
+	return err
+}
+
+func (pg *PostgresDB) DeleteCategory(id string) error {
+	_, err := pg.db.Exec(`
+		DELETE FROM categories
+		WHERE id = $1
+	`, id)
+	return err
 }

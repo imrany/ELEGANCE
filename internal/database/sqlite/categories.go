@@ -1,6 +1,10 @@
 package sqlite
 
-import "github.com/imrany/ecommerce/internal/models"
+import (
+	"time"
+
+	"github.com/imrany/ecommerce/internal/models"
+)
 
 func (sq *SQLiteDB) GetCategories() ([]models.Category, error) {
 	rows, err := sq.db.Query(`
@@ -35,4 +39,32 @@ func (sq *SQLiteDB) GetCategoryBySlug(slug string) (*models.Category, error) {
 		return nil, err
 	}
 	return &c, nil
+}
+
+func (sq *SQLiteDB) DeleteCategory(id string) error {
+	_, err := sq.db.Exec(`
+		DELETE FROM categories
+		WHERE id = ?
+	`, id)
+	return err
+}
+
+func (sq *SQLiteDB) CreateCategory(category *models.Category) (*models.Category, error) {
+	_, err := sq.db.Exec(`
+		INSERT INTO categories (id, name, slug, description, image_url, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`, category.ID, category.Name, category.Slug, category.Description, category.ImageURL, time.Now(), time.Now())
+	if err != nil {
+		return nil, err
+	}
+	return category, nil
+}
+
+func (sq *SQLiteDB) UpdateCategory(category *models.Category) error {
+	_, err := sq.db.Exec(`
+		UPDATE categories
+		SET name = ?, slug = ?, description = ?, image_url = ?, updated_at = ?
+		WHERE id = ?
+	`, category.Name, category.Slug, category.Description, category.ImageURL, time.Now(), category.ID)
+	return err
 }

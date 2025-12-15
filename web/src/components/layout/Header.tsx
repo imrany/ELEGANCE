@@ -22,14 +22,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSiteSetting } from "@/hooks/useSiteSetting";
 import { useOrder } from "@/contexts/OrderContext";
-
-const navLinks = [
-  { name: "Home", href: "/" },
-  { name: "Women", href: "/category/women" },
-  { name: "Men", href: "/category/men" },
-  { name: "Accessories", href: "/category/accessories" },
-  { name: "New Arrivals", href: "/category/new-arrivals" },
-];
+import { useCategories } from "@/hooks/useCategories";
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
@@ -38,6 +31,12 @@ export function Header() {
   const { orderStatusCount } = useOrder();
   const { user, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
+  const { data: categories } = useCategories();
+  const navLinks =
+    categories?.map((category) => ({
+      name: category.name,
+      href: `/category/${category.slug}`,
+    })) || null;
   const { data: setting, isLoading } = useSiteSetting("store");
   const value = (() => {
     if (typeof setting?.value === "string" && setting) {
@@ -76,16 +75,25 @@ export function Header() {
             </SheetTrigger>
             <SheetContent side="left" className="w-80 bg-background p-6">
               <nav className="flex flex-col gap-6 pt-8">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.name}
-                    to={link.href}
-                    className={`font-serif text-lg tracking-wide transition-colors hover:text-accent ${location.pathname === link.href ? "text-accent" : "text-foreground"}`}
-                    onClick={() => setIsOpen(false)}
-                  >
-                    {link.name}
-                  </Link>
-                ))}
+                {navLinks
+                  ? navLinks.map((link) => (
+                      <Link
+                        key={link.name}
+                        to={link.href}
+                        className={`font-serif text-lg tracking-wide transition-colors hover:text-accent ${location.pathname === link.href ? "text-accent" : "text-foreground"}`}
+                        onClick={() => setIsOpen(false)}
+                      >
+                        {link.name}
+                      </Link>
+                    ))
+                  : isAdmin && (
+                      <Link
+                        to="/admin/products"
+                        className="font-medium text-sm tracking-wide text-accent transition-colors hover:text-accent/80"
+                      >
+                        + [Add new product category]
+                      </Link>
+                    )}
                 {isAdmin && (
                   <Link
                     to="/admin"
@@ -111,15 +119,24 @@ export function Header() {
 
         {/* Desktop navigation */}
         <nav className="hidden lg:flex lg:items-center lg:gap-8">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              to={link.href}
-              className={`text-sm font-medium tracking-wide transition-colors hover:text-accent ${location.pathname === link.href ? "text-accent underline underline-offset-4" : "text-foreground link-underline"}`}
-            >
-              {link.name}
-            </Link>
-          ))}
+          {navLinks
+            ? navLinks.map((link) => (
+                <Link
+                  key={link.name}
+                  to={link.href}
+                  className={`text-sm font-medium tracking-wide transition-colors hover:text-accent ${location.pathname === link.href ? "text-accent underline underline-offset-4" : "text-foreground link-underline"}`}
+                >
+                  {link.name}
+                </Link>
+              ))
+            : isAdmin && (
+                <Link
+                  to="/admin/products"
+                  className="font-medium text-sm tracking-wide text-accent transition-colors hover:text-accent/80"
+                >
+                  + [Add New Product Category]
+                </Link>
+              )}
           {isAdmin && (
             <Link
               to="/admin"

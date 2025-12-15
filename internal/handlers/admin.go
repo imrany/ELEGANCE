@@ -588,3 +588,67 @@ func (h *AdminHandler) UpdateUser(c *gin.Context) {
 		"message": "User updated successfully",
 	})
 }
+
+func (h *AdminHandler) CreateCategory(c *gin.Context) {
+	var req models.Category
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid request body", err)
+		return
+	}
+
+	_, err := h.db.CreateCategory(&req)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to create category", err)
+		return
+	}
+
+	utils.SuccessResponse(c, http.StatusCreated, gin.H{
+		"message": "Category created successfully",
+	})
+}
+
+func (h *AdminHandler) UpdateCategory(c *gin.Context) {
+	slug := c.Param("slug")
+	var req models.Category
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid request body", err)
+		return
+	}
+
+	category, err := h.db.GetCategoryBySlug(slug)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get category", err)
+		return
+	}
+
+	category.Name = req.Name
+	category.Description = req.Description
+	category.ImageURL = req.ImageURL
+	category.Slug = req.Slug
+
+	err = h.db.UpdateCategory(category)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to update category", err)
+		return
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, gin.H{
+		"message": "Category updated successfully",
+	})
+}
+
+func (h *AdminHandler) DeleteCategory(c *gin.Context) {
+	id := c.Param("id")
+
+	err := h.db.DeleteCategory(id)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to delete category", err)
+		return
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, gin.H{
+		"message": "Category deleted successfully",
+	})
+}

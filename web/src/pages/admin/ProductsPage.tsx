@@ -7,7 +7,7 @@ import {
   Search,
   Package,
   Loader2,
-  X,
+  FolderPlus,
 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -26,23 +26,27 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { useProducts } from "@/hooks/useProducts";
-import { api, Product } from "@/lib/api";
+import { api, Product, Category } from "@/lib/api";
 import { useCategories } from "@/hooks/useCategories";
 import { ProductForm } from "@/components/ProductForm";
 import { cn } from "@/lib/utils";
-import { is } from "zod/v4/locales";
 import SidePanel, {
   PanelHeader,
   PanelTitle,
   PanelDescription,
   PanelBody,
 } from "@/components/common/SidePanel";
+import { CategoryForm } from "@/components/CategoryForm";
+
+type PanelTab = "product" | "category";
 
 export default function ProductsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [currentTab, setCurrentTab] = useState<PanelTab>("product");
 
   const { data: products, isLoading } = useProducts(
     {
@@ -56,7 +60,7 @@ export default function ProductsPage() {
 
   const { data: categories } = useCategories();
 
-  const deleteMutation = useMutation({
+  const deleteProductMutation = useMutation({
     mutationFn: async (id: string) => {
       const { data: message } = await api.deleteProduct(id);
       if (!message) throw new Error("Failed to delete product");
@@ -70,34 +74,65 @@ export default function ProductsPage() {
     },
   });
 
+  const deleteCategoryMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data: message } = await api.deleteCategory(id);
+      if (!message) throw new Error("Failed to delete category");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      toast.success("Category deleted successfully");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to delete category");
+    },
+  });
+
   const filteredProducts = products?.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase()),
   );
 
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
+    setEditingCategory(null);
+    setCurrentTab("product");
     setIsPanelOpen(true);
   };
 
   const handleAddProduct = () => {
     setEditingProduct(null);
+    setEditingCategory(null);
+    setCurrentTab("product");
+    setIsPanelOpen(true);
+  };
+
+  const handleEditCategory = (category: Category) => {
+    setEditingCategory(category);
+    setEditingProduct(null);
+    setCurrentTab("category");
+    setIsPanelOpen(true);
+  };
+
+  const handleAddCategory = () => {
+    setEditingCategory(null);
+    setEditingProduct(null);
+    setCurrentTab("category");
     setIsPanelOpen(true);
   };
 
   const handleClosePanel = () => {
     setIsPanelOpen(false);
-    setTimeout(() => setEditingProduct(null), 300); // Wait for animation
+    setTimeout(() => {
+      setEditingProduct(null);
+      setEditingCategory(null);
+    }, 300); // Wait for animation
   };
 
   return (
     <div className="relative flex h-full">
       {/* Main Content */}
       <div
-        className={cn(
-          "flex-1 space-y-6 transition-all duration-300",
-          // isPanelOpen ? "mr-0 lg:mr-[600px]" : "mr-0",
-          "mr-0",
-        )}
+        className={cn("flex-1 space-y-6 transition-all duration-300", "mr-0")}
       >
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -106,15 +141,104 @@ export default function ProductsPage() {
               Products
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Manage your product catalog
+              Manage your product catalog and categories
             </p>
           </div>
 
-          <Button onClick={handleAddProduct}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Product
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleAddCategory} variant="outline">
+              <FolderPlus className="mr-2 h-4 w-4" />
+              Add Category
+            </Button>
+
+            <Button onClick={handleAddProduct}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Product
+            </Button>
+          </div>
         </div>
+
+        {/* Categories Section */}
+        {categories && categories.length > 0 && (
+          <div className="rounded-lg border border-border bg-background p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-medium text-foreground">
+                Categories
+              </h2>
+              <Button
+                onClick={handleAddCategory}
+                variant="ghost"
+                size="sm"
+                className="h-8"
+              >
+                <Plus className="mr-1 h-3 w-3" />
+                Add
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {categories.map((category) => (
+                <div
+                  key={category.id}
+                  className="group flex items-center gap-2 rounded-md border border-border bg-secondary/50 px-3 py-1.5 transition-colors hover:bg-secondary"
+                >
+                  <span className="text-sm text-foreground">
+                    {category.name}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    (
+                    {products?.filter((p) => p.category_id === category.id)
+                      .length || 0}
+                    )
+                  </span>
+                  <div className="ml-1 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                    <button
+                      onClick={() => handleEditCategory(category)}
+                      className="rounded p-1 hover:bg-background"
+                    >
+                      <Pencil className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button className="rounded p-1 hover:bg-background">
+                          <Trash2 className="h-3 w-3 text-destructive" />
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Category</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{category.name}"?
+                            Products in this category will not be deleted but
+                            will have no category assigned.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() =>
+                              deleteCategoryMutation.mutate(category.id)
+                            }
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            disabled={deleteCategoryMutation.isPending}
+                          >
+                            {deleteCategoryMutation.isPending ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Deleting...
+                              </>
+                            ) : (
+                              "Delete"
+                            )}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Search and Stats */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -321,12 +445,12 @@ export default function ProductsPage() {
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction
                                   onClick={() =>
-                                    deleteMutation.mutate(product.id)
+                                    deleteProductMutation.mutate(product.id)
                                   }
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  disabled={deleteMutation.isPending}
+                                  disabled={deleteProductMutation.isPending}
                                 >
-                                  {deleteMutation.isPending ? (
+                                  {deleteProductMutation.isPending ? (
                                     <>
                                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                       Deleting...
@@ -351,33 +475,71 @@ export default function ProductsPage() {
 
       {/* Side Panel */}
       <SidePanel isOpen={isPanelOpen} onOpenChange={setIsPanelOpen}>
-        <PanelHeader>
-          <PanelTitle>
-            {editingProduct ? "Edit Product" : "Add New Product"}
-          </PanelTitle>
-          <PanelDescription>
-            {editingProduct
-              ? "Update product information"
-              : "Create a new product listing"}
-          </PanelDescription>
-        </PanelHeader>
-        <PanelBody>
-          <ProductForm
-            product={editingProduct}
-            categories={categories || []}
-            onSuccess={() => {
-              handleClosePanel();
-              queryClient.invalidateQueries({
-                queryKey: ["admin-products"],
-              });
-              toast.success(
-                editingProduct
-                  ? "Product updated successfully"
-                  : "Product created successfully",
-              );
-            }}
-          />
-        </PanelBody>
+        {currentTab === "product" && (
+          <>
+            <PanelHeader>
+              <div>
+                <PanelTitle>
+                  {editingProduct ? "Edit Product" : "Add New Product"}
+                </PanelTitle>
+                <PanelDescription>
+                  {editingProduct
+                    ? "Update product information"
+                    : "Create a new product listing"}
+                </PanelDescription>
+              </div>
+            </PanelHeader>
+            <PanelBody>
+              <ProductForm
+                product={editingProduct}
+                categories={categories || []}
+                onSuccess={() => {
+                  handleClosePanel();
+                  queryClient.invalidateQueries({
+                    queryKey: ["admin-products"],
+                  });
+                  toast.success(
+                    editingProduct
+                      ? "Product updated successfully"
+                      : "Product created successfully",
+                  );
+                }}
+              />
+            </PanelBody>
+          </>
+        )}
+        {currentTab === "category" && (
+          <>
+            <PanelHeader>
+              <div>
+                <PanelTitle>
+                  {editingCategory ? "Edit Category" : "Add New Category"}
+                </PanelTitle>
+                <PanelDescription>
+                  {editingCategory
+                    ? "Update category information"
+                    : "Create a new category"}
+                </PanelDescription>
+              </div>
+            </PanelHeader>
+            <PanelBody>
+              <CategoryForm
+                category={editingCategory}
+                onSuccess={() => {
+                  handleClosePanel();
+                  queryClient.invalidateQueries({
+                    queryKey: ["categories"],
+                  });
+                  toast.success(
+                    editingCategory
+                      ? "Category updated successfully"
+                      : "Category created successfully",
+                  );
+                }}
+              />
+            </PanelBody>
+          </>
+        )}
       </SidePanel>
     </div>
   );

@@ -19,13 +19,13 @@ export interface User {
 }
 
 export interface Category {
-  id: string;
+  id: string | null;
   name: string;
   slug: string;
   description: string | null;
   image_url: string | null;
-  created_at: string; // Assuming ISO 8601 string for time.Time
-  updated_at: string; // Assuming ISO 8601 string for time.Time
+  created_at: string | null; // Assuming ISO 8601 string for time.Time
+  updated_at: string | null; // Assuming ISO 8601 string for time.Time
 }
 
 export interface Product {
@@ -270,6 +270,29 @@ class ApiClient {
 
   async getCategoryBySlug(slug: string) {
     return this.request<{ data: Category }>(`/api/categories/${slug}`);
+  }
+
+  async createCategory(categoryData: Category) {
+    return this.request<{ data: Category }>("/api/admin/categories", {
+      method: "POST",
+      body: JSON.stringify(categoryData),
+    });
+  }
+
+  async updateCategory(categoryData: Category) {
+    return this.request<{ data: Category }>(
+      `/api/admin/categories/${categoryData.slug}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(categoryData),
+      },
+    );
+  }
+
+  async deleteCategory(id: string) {
+    return this.request<{ data: string }>(`/api/admin/categories/${id}`, {
+      method: "DELETE",
+    });
   }
 
   // Orders
