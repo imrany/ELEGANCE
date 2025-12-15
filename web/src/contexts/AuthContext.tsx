@@ -108,8 +108,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = () => {
     localStorage.removeItem("auth_token");
     setUser(null);
-    // Redirect to home page
-    window.location.href = "/";
   };
 
   const createInitialAdmin = async (

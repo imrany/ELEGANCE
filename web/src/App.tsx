@@ -27,6 +27,7 @@ import OrdersPage from "./pages/OrdersPage";
 import { useEffect, useState } from "react";
 import { api } from "./lib/api";
 import UsersPage from "./pages/admin/UsersPage";
+import AccountPage from "./pages/AccountPage";
 
 const queryClient = new QueryClient();
 
@@ -109,6 +110,14 @@ const App = () => {
                       />
 
                       {/* Protected Customer Routes (require login) */}
+                      <Route
+                        path="/account"
+                        element={
+                          <ProtectedRoute>
+                            <AccountPage />
+                          </ProtectedRoute>
+                        }
+                      />
                       <Route
                         path="/checkout"
                         element={

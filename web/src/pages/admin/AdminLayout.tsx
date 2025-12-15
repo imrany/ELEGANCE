@@ -58,7 +58,6 @@ export default function AdminLayout() {
 
   const handleSignOut = () => {
     signOut();
-    navigate("/");
   };
 
   if (isLoading) {

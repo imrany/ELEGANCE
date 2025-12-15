@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   ShoppingBag,
   Search,
@@ -6,6 +6,7 @@ import {
   User,
   LogOut,
   ShoppingCart,
+  UserCog,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -32,9 +33,11 @@ const navLinks = [
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
   const { itemCount } = useCart();
   const { orderCount } = useOrder();
   const { user, isAdmin, signOut } = useAuth();
+  const navigate = useNavigate();
   const { data: setting, isLoading } = useSiteSetting("store");
   const value = (() => {
     if (typeof setting?.value === "string" && setting) {
@@ -77,7 +80,7 @@ export function Header() {
                   <Link
                     key={link.name}
                     to={link.href}
-                    className="font-serif text-lg tracking-wide text-foreground transition-colors hover:text-accent"
+                    className={`font-serif text-lg tracking-wide transition-colors hover:text-accent ${location.pathname === link.href ? "text-accent" : "text-foreground"}`}
                     onClick={() => setIsOpen(false)}
                   >
                     {link.name}
@@ -112,7 +115,7 @@ export function Header() {
             <Link
               key={link.name}
               to={link.href}
-              className="link-underline text-sm font-medium tracking-wide text-foreground transition-colors hover:text-accent"
+              className={`text-sm font-medium tracking-wide transition-colors hover:text-accent ${location.pathname === link.href ? "text-accent underline underline-offset-4" : "text-foreground link-underline"}`}
             >
               {link.name}
             </Link>
@@ -120,7 +123,7 @@ export function Header() {
           {isAdmin && (
             <Link
               to="/admin"
-              className="text-sm font-medium tracking-wide text-accent transition-colors hover:text-accent/80"
+              className="text-sm link-underline font-medium tracking-wide text-accent transition-colors hover:text-accent/80"
             >
               Admin
             </Link>
@@ -146,6 +149,14 @@ export function Header() {
                   <div className="px-2 py-1.5 text-sm text-muted-foreground">
                     {user.email}
                   </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => navigate("/account")}
+                    className="cursor-pointer"
+                  >
+                    <UserCog className="mr-2 h-4 w-4" />
+                    Manage Account
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={signOut}
@@ -177,7 +188,7 @@ export function Header() {
               </Link>
             </Button>
           )}
-          <Button variant="ghost" size="icon" className="relative" asChild>
+          <Button variant="ghost" size="icon" asChild>
             <Link to="/cart">
               <ShoppingBag className="h-5 w-5" />
               {itemCount > 0 && (

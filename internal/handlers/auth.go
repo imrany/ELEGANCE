@@ -148,3 +148,82 @@ func (h *AuthHandler) GetMe(c *gin.Context) {
 		"user": user,
 	})
 }
+
+// UpdateUserAccount updates current user account info
+func (h *AuthHandler) UpdateUserAccount(c *gin.Context) {
+	var req struct {
+		ID          string `json:"id"`
+		FirstName   string `json:"first_name"`
+		LastName    string `json:"last_name"`
+		Email       string `json:"email"`
+		PhoneNumber string `json:"phone_number"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid request body", err)
+		return
+	}
+
+	user, err := h.db.GetUserByID(req.ID)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusNotFound, "User not found", err)
+		return
+	}
+
+	user.FirstName = req.FirstName
+	user.LastName = req.LastName
+	user.Email = req.Email
+	user.PhoneNumber = req.PhoneNumber
+
+	if err := h.db.UpdateUser(user); err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to update user", err)
+		return
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, gin.H{
+		"user":    user,
+		"message": "Account updated successfully",
+	})
+}
+
+// ChangeUserPassword changes current user password
+func (h *AuthHandler) ChangeUserPassword(c *gin.Context) {
+	userID := c.GetString("user_id")
+
+	var req struct {
+		CurrentPassword string `json:"current_password"`
+		NewPassword     string `json:"new_password"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid request body", err)
+		return
+	}
+
+	user, err := h.db.GetUserByID(userID)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusNotFound, "User not found", err)
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.CurrentPassword)); err != nil {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Invalid current password", nil)
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to hash password", err)
+		return
+	}
+
+	user.Password = string(hashedPassword)
+
+	if err := h.db.UpdateUser(user); err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to update user", err)
+		return
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, gin.H{
+		"user":    user,
+		"message": "Password changed successfully",
+	})
+}

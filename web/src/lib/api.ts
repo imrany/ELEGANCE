@@ -219,6 +219,29 @@ class ApiClient {
     }>("/api/auth/me");
   }
 
+  async updateUserAccount(userData: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone_number: string;
+  }) {
+    return this.request<{ data: User }>(`/api/auth/me`, {
+      method: "PUT",
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async changeUserPassword(data: {
+    current_password: string;
+    new_password: string;
+  }) {
+    return this.request<{ data: User }>(`/api/auth/me/password`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
   // Products
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getProducts(params?: Record<string, any>) {

@@ -25,6 +25,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
+import { formatDate } from "@/lib/utils";
 
 interface ProfileFormData {
   firstName: string;
@@ -304,8 +305,8 @@ export default function AccountSettings() {
                 <span className="text-sm text-muted-foreground">
                   Account ID
                 </span>
-                <span className="text-sm font-mono">
-                  {user?.id?.substring(0, 8)}
+                <span className="text-sm font-mono text-muted-foreground">
+                  {user?.id?.substring(0, 8)}...
                 </span>
               </div>
               <div className="flex items-center justify-between py-2">
@@ -313,13 +314,7 @@ export default function AccountSettings() {
                   Member Since
                 </span>
                 <span className="text-sm">
-                  {user?.created_at
-                    ? new Date(user.created_at).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })
-                    : "N/A"}
+                  {user?.created_at ? formatDate(user.created_at) : "N/A"}
                 </span>
               </div>
             </CardContent>
@@ -362,6 +357,7 @@ export default function AccountSettings() {
                         })
                       }
                       className="pl-10"
+                      placeholder="••••••••"
                       required
                       disabled={changePasswordMutation.isPending}
                     />
@@ -383,6 +379,7 @@ export default function AccountSettings() {
                         })
                       }
                       className="pl-10"
+                      placeholder="••••••••"
                       required
                       minLength={8}
                       disabled={changePasswordMutation.isPending}
@@ -402,6 +399,7 @@ export default function AccountSettings() {
                     <Input
                       id="confirmPassword"
                       type="password"
+                      placeholder="••••••••"
                       value={passwordData.confirmPassword}
                       onChange={(e) =>
                         setPasswordData({

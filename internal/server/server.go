@@ -121,6 +121,8 @@ func (s *Server) setupRoutes() {
 		authenticated.Use(middleware.AuthMiddleware(s.config.JWTSecret))
 		{
 			authenticated.GET("/auth/me", authHandler.GetMe)
+			authenticated.PUT("/auth/me", authHandler.UpdateUserAccount)
+			authenticated.PUT("/auth/me/password", authHandler.ChangeUserPassword)
 
 			// Orders
 			authenticated.POST("/orders", s.handler.CreateOrder)
