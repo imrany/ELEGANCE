@@ -5,10 +5,12 @@ import { Input } from "@/components/ui/input";
 import { useSiteSetting } from "@/hooks/useSiteSetting";
 import { Skeleton } from "../ui/skeleton";
 import { SiteSetting } from "@/lib/api";
+import { useCategories } from "@/hooks/useCategories";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
 
+  const { data: categories, isLoading } = useCategories();
   const { data: store, isLoading: storeLoading } = useSiteSetting("store");
   const { data: socialMedia, isLoading: socialMediaLoading } =
     useSiteSetting("social_media");
@@ -98,30 +100,24 @@ export function Footer() {
               Shop
             </h3>
             <nav className="flex flex-col gap-3">
-              <Link
-                to="/category/women"
-                className="text-sm text-primary-foreground/70 transition-colors hover:text-accent"
-              >
-                Women
-              </Link>
-              <Link
-                to="/category/men"
-                className="text-sm text-primary-foreground/70 transition-colors hover:text-accent"
-              >
-                Men
-              </Link>
-              <Link
-                to="/category/accessories"
-                className="text-sm text-primary-foreground/70 transition-colors hover:text-accent"
-              >
-                Accessories
-              </Link>
-              <Link
-                to="/category/new-arrivals"
-                className="text-sm text-primary-foreground/70 transition-colors hover:text-accent"
-              >
-                New Arrivals
-              </Link>
+              {!isLoading &&
+                categories &&
+                categories
+                  .slice(0, 4)
+                  .sort(
+                    (a, b) =>
+                      new Date(b.created_at).getTime() -
+                      new Date(a.created_at).getTime(),
+                  )
+                  .map((category) => (
+                    <Link
+                      key={category.slug}
+                      to={`/category/${category.slug}`}
+                      className="text-sm text-primary-foreground/70 transition-colors hover:text-accent"
+                    >
+                      {category.name}
+                    </Link>
+                  ))}
             </nav>
           </div>
 
