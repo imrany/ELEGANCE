@@ -21,7 +21,7 @@ type DB interface {
 	GetCategoryBySlug(slug string) (*models.Category, error)
 	CreateCategory(category *models.Category) (*models.Category, error)
 	UpdateCategory(category *models.Category) error
-	DeleteCategory(id string) error
+	DeleteCategory(idORSlug string) error
 
 	// Product operations
 	GetProducts(filters models.ProductFilters) ([]models.Product, error)

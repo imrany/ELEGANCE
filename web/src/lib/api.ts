@@ -289,8 +289,8 @@ class ApiClient {
     );
   }
 
-  async deleteCategory(id: string) {
-    return this.request<{ data: string }>(`/api/admin/categories/${id}`, {
+  async deleteCategory(key: string) {
+    return this.request<{ data: string }>(`/api/admin/categories/${key}`, {
       method: "DELETE",
     });
   }

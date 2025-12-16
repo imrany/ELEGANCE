@@ -75,8 +75,8 @@ export default function ProductsPage() {
   });
 
   const deleteCategoryMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { data: message } = await api.deleteCategory(id);
+    mutationFn: async (key: string) => {
+      const { data: message } = await api.deleteCategory(key);
       if (!message) throw new Error("Failed to delete category");
     },
     onSuccess: () => {
@@ -216,7 +216,9 @@ export default function ProductsPage() {
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() =>
-                              deleteCategoryMutation.mutate(category.id)
+                              deleteCategoryMutation.mutate(
+                                category.id || category.slug,
+                              )
                             }
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             disabled={deleteCategoryMutation.isPending}

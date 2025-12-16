@@ -73,7 +73,7 @@ function CategoryCard({ category, className = "" }: CategoryCardProps) {
       className={`group relative block aspect-[3/4] overflow-hidden ${className}`}
     >
       <img
-        src={imageUrl}
+        src={category.image_url || imageUrl}
         alt={category.name}
         className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
       />

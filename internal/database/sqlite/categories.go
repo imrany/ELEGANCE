@@ -3,6 +3,7 @@ package sqlite
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/imrany/ecommerce/internal/models"
 )
 
@@ -41,11 +42,11 @@ func (sq *SQLiteDB) GetCategoryBySlug(slug string) (*models.Category, error) {
 	return &c, nil
 }
 
-func (sq *SQLiteDB) DeleteCategory(id string) error {
+func (sq *SQLiteDB) DeleteCategory(idOrSlug string) error {
 	_, err := sq.db.Exec(`
 		DELETE FROM categories
-		WHERE id = ?
-	`, id)
+		WHERE id = ? OR slug = ?
+	`, idOrSlug, idOrSlug)
 	return err
 }
 
@@ -53,7 +54,7 @@ func (sq *SQLiteDB) CreateCategory(category *models.Category) (*models.Category,
 	_, err := sq.db.Exec(`
 		INSERT INTO categories (id, name, slug, description, image_url, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?)
-	`, category.ID, category.Name, category.Slug, category.Description, category.ImageURL, time.Now(), time.Now())
+	`, uuid.New().String(), category.Name, category.Slug, category.Description, category.ImageURL, time.Now(), time.Now())
 	if err != nil {
 		return nil, err
 	}

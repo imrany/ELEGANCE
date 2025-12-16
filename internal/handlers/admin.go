@@ -640,9 +640,9 @@ func (h *AdminHandler) UpdateCategory(c *gin.Context) {
 }
 
 func (h *AdminHandler) DeleteCategory(c *gin.Context) {
-	id := c.Param("id")
+	idOrSlug := c.Param("unique_value")
 
-	err := h.db.DeleteCategory(id)
+	err := h.db.DeleteCategory(idOrSlug)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to delete category", err)
 		return

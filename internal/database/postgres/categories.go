@@ -3,6 +3,7 @@ package postgres
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/imrany/ecommerce/internal/models"
 )
 
@@ -45,7 +46,7 @@ func (pg *PostgresDB) CreateCategory(category *models.Category) (*models.Categor
 	_, err := pg.db.Exec(`
 		INSERT INTO categories (id, name, slug, description, image_url, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
-	`, category.ID, category.Name, category.Slug, category.Description, category.ImageURL, time.Now(), time.Now())
+	`, uuid.New().String(), category.Name, category.Slug, category.Description, category.ImageURL, time.Now(), time.Now())
 	if err != nil {
 		return nil, err
 	}
@@ -61,10 +62,10 @@ func (pg *PostgresDB) UpdateCategory(category *models.Category) error {
 	return err
 }
 
-func (pg *PostgresDB) DeleteCategory(id string) error {
+func (pg *PostgresDB) DeleteCategory(idOrSlug string) error {
 	_, err := pg.db.Exec(`
 		DELETE FROM categories
-		WHERE id = $1
-	`, id)
+		WHERE id = $1 OR slug = $1
+	`, idOrSlug)
 	return err
 }

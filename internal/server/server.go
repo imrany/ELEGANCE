@@ -147,7 +147,7 @@ func (s *Server) setupRoutes() {
 			// Category management
 			admin.POST("/categories", adminHandler.CreateCategory)
 			admin.PUT("/categories/:slug", adminHandler.UpdateCategory)
-			admin.DELETE("/categories/:id", adminHandler.DeleteCategory)
+			admin.DELETE("/categories/:key", adminHandler.DeleteCategory)
 
 			// Orders management
 			admin.GET("/orders", adminHandler.GetAllOrders)
