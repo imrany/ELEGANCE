@@ -6,6 +6,7 @@ import categoryMen from "@/assets/category-men.jpg";
 import categoryAccessories from "@/assets/category-accessories.jpg";
 import { useCategories } from "@/hooks/useCategories";
 import { Category } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 const categoryImages: Record<string, string> = {
   women: categoryWomen,
@@ -14,6 +15,7 @@ const categoryImages: Record<string, string> = {
 };
 
 export function CategoryGrid() {
+  const { isAdmin } = useAuth();
   const { data: categories, isLoading } = useCategories();
 
   if (isLoading) {
@@ -45,15 +47,28 @@ export function CategoryGrid() {
           <div className="mx-auto mt-4 h-px w-16 bg-accent" />
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {mainCategories?.map((category, index) => (
-            <CategoryCard
-              key={category.id}
-              category={category}
-              className={index === 0 ? "md:row-span-2 lg:row-span-1" : ""}
-            />
-          ))}
-        </div>
+        {mainCategories ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {mainCategories?.map((category, index) => (
+              <CategoryCard
+                key={category.id}
+                category={category}
+                className={index === 0 ? "md:row-span-2 lg:row-span-1" : ""}
+              />
+            ))}
+          </div>
+        ) : (
+          isAdmin && (
+            <div className="flex items-center justify-center w-full">
+              <Link
+                to="/admin/products"
+                className="font-medium text-lg tracking-wide text-accent transition-colors hover:text-accent/80"
+              >
+                + [Add new product category]
+              </Link>
+            </div>
+          )
+        )}
       </div>
     </section>
   );

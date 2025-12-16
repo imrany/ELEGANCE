@@ -1,8 +1,11 @@
 import { ProductCard } from "@/components/products/ProductCard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/contexts/AuthContext";
 import { useProducts } from "@/hooks/useProducts";
+import { Link } from "react-router-dom";
 
 export function FeaturedProducts() {
+  const { isAdmin } = useAuth();
   const { data: products, isLoading } = useProducts(
     {
       featured: true,
@@ -35,15 +38,30 @@ export function FeaturedProducts() {
             ))}
           </div>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {products?.map((product, index) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                className={`animate-fade-up delay-${(index + 1) * 100}`}
-              />
-            ))}
-          </div>
+          <>
+            {products ? (
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {products?.map((product, index) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    className={`animate-fade-up delay-${(index + 1) * 100}`}
+                  />
+                ))}
+              </div>
+            ) : (
+              isAdmin && (
+                <div className="flex items-center justify-center w-full">
+                  <Link
+                    to="/admin/products"
+                    className="font-medium text-lg tracking-wide text-accent transition-colors hover:text-accent/80"
+                  >
+                    + [Add New Featured Collection]
+                  </Link>
+                </div>
+              )
+            )}
+          </>
         )}
       </div>
     </section>
