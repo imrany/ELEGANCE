@@ -95,14 +95,13 @@ export function Footer() {
           </div>
 
           {/* Shop */}
-          <div className="space-y-6">
-            <h3 className="text-sm font-medium tracking-luxury uppercase">
-              Shop
-            </h3>
-            <nav className="flex flex-col gap-3">
-              {!isLoading &&
-                categories &&
-                categories
+          {!isLoading && categories && (
+            <div className="space-y-6">
+              <h3 className="text-sm font-medium tracking-luxury uppercase">
+                Shop
+              </h3>
+              <nav className="flex flex-col gap-3">
+                {categories
                   .slice(0, 4)
                   .sort(
                     (a, b) =>
@@ -118,8 +117,9 @@ export function Footer() {
                       {category.name}
                     </Link>
                   ))}
-            </nav>
-          </div>
+              </nav>
+            </div>
+          )}
 
           {/* Help */}
           <div className="space-y-6">
