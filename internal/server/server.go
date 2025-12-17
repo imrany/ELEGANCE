@@ -1,8 +1,13 @@
 package server
 
 import (
+	"embed"
 	"fmt"
+	"io/fs"
+	"log"
 	"net/http"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -11,6 +16,9 @@ import (
 	"github.com/imrany/ecommerce/internal/handlers"
 	"github.com/imrany/ecommerce/internal/middleware"
 )
+
+//go:embed dist/*
+var dist embed.FS
 
 type ServerConfig struct {
 	Port int
@@ -71,14 +79,18 @@ func New(cfg *Config, db database.DB) *Server {
 
 // setupRoutes configures all API routes
 func (s *Server) setupRoutes() {
-	// Health check
+	// static assets
 	s.router.Static("/uploads", "./uploads")
+
+	// Health check
 	s.router.GET("/health", s.handleHealth)
-	s.router.GET("/", s.handleRoot)
+
 	// API v1 routes
 	api := s.router.Group("/api")
 	{
-		// website builder endpoints (public)
+		api.GET("", s.handleRoot)
+
+		// website builder endpoints (public) - for frontend display
 		websiteBuilder := api.Group("/website-builder")
 		{
 			websiteBuilder.GET("", s.handler.GetAllWebsiteConfig)
@@ -169,8 +181,8 @@ func (s *Server) setupRoutes() {
 			admin.PUT("/users/password", adminHandler.UpdateUserPassword)
 			admin.PUT("/users", adminHandler.UpdateUser)
 
-			// website-builder
-			admin.PUT("/website-builder/:key", adminHandler.UpdateWebsiteSetting)
+			// Website builder management (admin endpoints)
+			admin.PUT("/website-config/:key", adminHandler.UpdateWebsiteSetting)
 
 			// Images management
 			admin.POST("/upload/image", adminHandler.UploadImage)
@@ -180,6 +192,68 @@ func (s *Server) setupRoutes() {
 			admin.PUT("/settings/:key", adminHandler.UpdateSetting)
 		}
 	}
+
+	// Frontend SPA Routing - Serve embedded dist folder
+	s.setupSPARouting()
+}
+
+// setupSPARouting configures the SPA routing for the embedded frontend
+func (s *Server) setupSPARouting() {
+	// Get the embedded dist filesystem
+	distFS, err := fs.Sub(dist, "dist")
+	if err != nil {
+		log.Fatal("Failed to load embedded dist folder: ", err)
+	}
+
+	// Create file server for static assets
+	fileServer := http.FileServer(http.FS(distFS))
+
+	// Handle all remaining routes for SPA
+	s.router.NoRoute(func(c *gin.Context) {
+		path := c.Request.URL.Path
+
+		// Check if the requested path is a static file (has an extension)
+		if isStaticFile(path) {
+			// Try to open the file from embedded FS
+			_, err := distFS.Open(strings.TrimPrefix(path, "/"))
+			if err == nil {
+				// File exists, serve it
+				c.Request.URL.Path = path
+				fileServer.ServeHTTP(c.Writer, c.Request)
+				return
+			}
+			// File doesn't exist, return 404
+			c.Status(http.StatusNotFound)
+			return
+		}
+
+		// Not a static file, serve index.html for client-side routing
+		indexData, err := fs.ReadFile(distFS, "index.html")
+		if err != nil {
+			log.Printf("Failed to read index.html: %v", err)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		c.Data(http.StatusOK, "text/html; charset=utf-8", indexData)
+	})
+}
+
+// isStaticFile checks if the path looks like a static file
+func isStaticFile(path string) bool {
+	ext := filepath.Ext(path)
+	staticExtensions := []string{
+		".js", ".css", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico",
+		".woff", ".woff2", ".ttf", ".eot", ".json", ".xml", ".txt",
+		".webp", ".mp4", ".webm", ".mp3", ".pdf", ".zip",
+	}
+
+	for _, staticExt := range staticExtensions {
+		if strings.EqualFold(ext, staticExt) {
+			return true
+		}
+	}
+	return false
 }
 
 // handleHealth handles health check requests
@@ -195,22 +269,26 @@ func (s *Server) handleHealth(c *gin.Context) {
 // handleRoot handles root endpoint requests
 func (s *Server) handleRoot(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"message": "E-Commerce API",
+		"message": "ELEGANCE API",
 		"version": "1.0.0",
 		"endpoints": map[string]string{
-			"health":     "GET /health",
-			"categories": "GET /api/categories",
-			"products":   "GET /api/products",
-			"orders":     "POST /api/orders, GET /api/orders/:id, DELETE /api/orders/:id, PUT /api/orders/:id, PATCH /api/orders/:id, GET /api/orders",
-			"settings":   "GET /api/settings/:key",
-			"auth":       "POST /api/auth/signup, POST /api/auth/signin",
+			"health":          "GET /health",
+			"categories":      "GET /api/categories",
+			"products":        "GET /api/products",
+			"orders":          "POST /api/orders, GET /api/orders/:id, DELETE /api/orders/:id, PUT /api/orders/:id, PATCH /api/orders/:id, GET /api/orders",
+			"settings":        "GET /api/settings/:key",
+			"auth":            "POST /api/auth/signup, POST /api/auth/signin",
+			"website-builder": "GET /api/website-builder, GET /api/website-builder/:key",
 		},
-		"documentation": "https://github.com/imrany/ecommerce",
+		"documentation": "https://github.com/imrany/ELEGANCE",
 	})
 }
 
 // Start starts the HTTP server
 func (s *Server) Start() error {
 	addr := fmt.Sprintf("%s:%d", s.config.Server.Host, s.config.Server.Port)
+	log.Printf("Server starting on %s", addr)
+	log.Printf("Health check: http://%s/health", addr)
+	log.Printf("API endpoint: http://%s/api", addr)
 	return s.router.Run(addr)
 }
