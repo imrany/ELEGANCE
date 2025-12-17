@@ -23,11 +23,8 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import type { WebsiteConfig } from "@/lib/api";
-import {
-  SectionData as CombinedConfig,
-  DEFAULT_CONFIG,
-} from "./WebsiteBuilder";
-import { cn } from "@/lib/utils";
+import { SectionData as CombinedConfig } from "@/lib/api";
+import { DEFAULT_CONFIG, cn } from "@/lib/utils";
 
 // Icon mapping for features
 const iconMap: Record<string, React.ReactNode> = {

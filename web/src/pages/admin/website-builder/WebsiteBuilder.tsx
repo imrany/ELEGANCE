@@ -17,7 +17,7 @@ import {
   ToolCase,
 } from "lucide-react";
 import { toast } from "sonner";
-import { api, WebsiteConfig, WebsiteSettingKey } from "@/lib/api";
+import { api, SectionData, WebsiteConfig, WebsiteSettingKey } from "@/lib/api";
 import { AboutSection } from "@/components/website-builder/AboutSection";
 import { FeaturesSection } from "@/components/website-builder/FeaturesSection";
 import { ContactSection } from "@/components/website-builder/ContactSection";
@@ -25,113 +25,7 @@ import { HeroSection } from "@/components/website-builder/HeroSection";
 import { ThemeCustomizer } from "@/components/website-builder/ThemeCustomizer";
 import { SocialMediaLinks } from "@/components/website-builder/SocialMediaLinks";
 import { SEOSettings } from "@/components/website-builder/SEOSettings";
-
-export interface SectionData {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  hero?: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  about?: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  features?: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  contact?: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  theme?: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  seo?: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  social?: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  store: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  smtp: any;
-}
-
-export const DEFAULT_CONFIG: SectionData = {
-  hero: {
-    title: "Welcome to Our Store",
-    subtitle: "Discover amazing products at great prices",
-    cta_text: "Shop Now",
-    cta_link: "/products",
-    background_image: "",
-    overlay: true,
-    overlay_opacity: 0.5,
-  },
-  about: {
-    title: "About Us",
-    description:
-      "We are dedicated to providing the best products and services to our customers.",
-    image: "",
-    features: ["Quality Products", "Fast Shipping", "Great Support"],
-  },
-  features: {
-    title: "Why Choose Us",
-    subtitle: "Discover what makes us special",
-    items: [
-      {
-        icon: "ShoppingBag",
-        title: "Quality Products",
-        description: "We offer only the best quality products",
-      },
-      {
-        icon: "Truck",
-        title: "Fast Delivery",
-        description: "Get your orders delivered quickly",
-      },
-      {
-        icon: "Shield",
-        title: "Secure Payments",
-        description: "Your transactions are always secure",
-      },
-    ],
-  },
-  contact: {
-    title: "Get In Touch",
-    subtitle: "We'd love to hear from you",
-    email: "hello@example.com",
-    phone: "+1 (555) 123-4567",
-    address: "123 Main St, City, Country",
-    show_map: false,
-    map_url: "",
-  },
-  theme: {
-    primary_color: "#000000",
-    secondary_color: "#666666",
-    accent_color: "#007bff",
-    font_family: "Inter",
-    border_radius: "0.5rem",
-  },
-  seo: {
-    title: "My Store - Quality Products",
-    description: "Shop the best products at amazing prices",
-    keywords: "store, shop, products, ecommerce",
-    og_image: "",
-    favicon: "",
-  },
-  social: {
-    facebook: "",
-    twitter: "",
-    instagram: "",
-    linkedin: "",
-    youtube: "",
-    tiktok: "",
-  },
-  store: {
-    name: "ÉLÉGANCE",
-    currency: "KES",
-    free_delivery_threshold: 10000,
-    logo: "/logo.png",
-    announcement:
-      "Free Delivery on Orders Over KES 10,000 | Luxury Fashion, Made in Kenya",
-    description:
-      "Discover the finest luxury fashion in Kenya, crafted with passion and precision.",
-  },
-  smtp: {
-    enabled: false,
-    from_email: "",
-    resend_api_key: "",
-  },
-};
+import { DEFAULT_CONFIG } from "@/lib/utils";
 
 export default function WebsiteBuilder() {
   const queryClient = useQueryClient();
@@ -165,18 +59,21 @@ export default function WebsiteBuilder() {
 
   // Update local config when data changes
   useEffect(() => {
-    if (parsedConfig) {
-      setLocalConfig((prev) => ({
-        ...prev,
-        [activeTab]: parsedConfig,
-      }));
-    } else if (DEFAULT_CONFIG[activeTab as keyof SectionData]) {
-      setLocalConfig((prev) => ({
-        ...prev,
-        [activeTab]: DEFAULT_CONFIG[activeTab as keyof SectionData],
-      }));
+    if (!parsedConfig) return;
+
+    const currentLocal = localConfig[activeTab as keyof SectionData];
+
+    // FIX: Only sync from API if the user HAS NOT started making local changes
+    // Or if the tab has just switched and local data is missing.
+    if (!hasChanges) {
+      if (JSON.stringify(currentLocal) !== JSON.stringify(parsedConfig)) {
+        setLocalConfig((prev) => ({
+          ...prev,
+          [activeTab]: parsedConfig,
+        }));
+      }
     }
-  }, [activeTab]);
+  }, [activeTab, parsedConfig, hasChanges]); // Added hasChanges to deps
 
   // Save website config
   const saveMutation = useMutation({
@@ -229,7 +126,7 @@ export default function WebsiteBuilder() {
   if (isLoading && !configData) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-accent" />
       </div>
     );
   }

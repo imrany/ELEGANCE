@@ -654,27 +654,6 @@ func (h *AdminHandler) DeleteCategory(c *gin.Context) {
 	})
 }
 
-func (h *AdminHandler) GetAllWebsiteConfig(c *gin.Context) {
-	settings, err := h.db.GetAllWebsiteSettings()
-	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get website settings", err)
-		return
-	}
-
-	utils.SuccessResponse(c, http.StatusOK, settings)
-}
-
-func (h *AdminHandler) GetWebsiteConfig(c *gin.Context) {
-	key := c.Param("key")
-	settings, err := h.db.GetWebsiteSettingByKey(key)
-	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get website settings", err)
-		return
-	}
-
-	utils.SuccessResponse(c, http.StatusOK, settings)
-}
-
 func (h *AdminHandler) UpdateWebsiteSetting(c *gin.Context) {
 	key := c.Param("key")
 	userID, exists := c.Get("user_id")

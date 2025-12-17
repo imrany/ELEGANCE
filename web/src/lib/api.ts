@@ -7,6 +7,27 @@ interface ApiError {
   status: number;
 }
 
+export interface SectionData {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  hero?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  about?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  features?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  contact?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  theme?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  seo?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  social?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  store: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  smtp: any;
+}
+
 export type WebsiteSettingKeys = {
   HERO: "hero";
   ABOUT: "about";
@@ -475,14 +496,14 @@ class ApiClient {
 
   // Website Builder
   async getAllWebsiteConfig() {
-    const url = `/api/admin/website-builder`;
+    const url = `/api/website-builder`;
     return this.request<{ data: WebsiteConfig[] }>(url, {
       method: "GET",
     });
   }
 
   async getWebsiteConfig(key: string) {
-    const url = `/api/admin/website-builder/${key}`;
+    const url = `/api/website-builder/${key}`;
     return this.request<{ data: WebsiteConfig }>(url, {
       method: "GET",
     });

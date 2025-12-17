@@ -22,9 +22,9 @@ import {
   Twitter,
   Store,
   MessageCircle,
-  Mail,
   Loader2,
   X,
+  MailQuestionMarkIcon,
 } from "lucide-react";
 
 export default function SettingsPage() {
@@ -84,8 +84,8 @@ export default function SettingsPage() {
 
   const {
     data: emailSettings,
-    isLoading: emailLoading,
-    error: emailError,
+    isLoading: smtpLoading,
+    error: smtpError,
   } = useQuery({
     queryKey: ["settings", "email"],
     queryFn: async () => {
@@ -279,7 +279,7 @@ export default function SettingsPage() {
 
   // Loading state
   const isLoading =
-    storeLoading || whatsappLoading || emailLoading || socialLoading;
+    storeLoading || whatsappLoading || smtpLoading || socialLoading;
 
   if (isLoading) {
     return (
@@ -290,7 +290,7 @@ export default function SettingsPage() {
   }
 
   // Error state
-  const hasError = storeError || whatsappError || emailError || socialError;
+  const hasError = storeError || whatsappError || smtpError || socialError;
   if (hasError) {
     return (
       <div className="space-y-4">
@@ -331,9 +331,9 @@ export default function SettingsPage() {
             <MessageCircle className="mr-2 h-4 w-4" />
             <span className="hidden md:inline">WhatsApp</span>
           </TabsTrigger>
-          <TabsTrigger value="email">
-            <Mail className="mr-2 h-4 w-4" />
-            <span className="hidden md:inline">Email</span>
+          <TabsTrigger value="smtp">
+            <MailQuestionMarkIcon className="mr-2 h-4 w-4" />
+            <span className="hidden md:inline">SMTP</span>
           </TabsTrigger>
         </TabsList>
 
@@ -606,11 +606,11 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        {/* Email Settings */}
-        <TabsContent value="email">
+        {/* SMTP Settings */}
+        <TabsContent value="smtp">
           <Card>
             <CardHeader>
-              <CardTitle>Email Configuration</CardTitle>
+              <CardTitle>SMTP Configuration</CardTitle>
               <CardDescription>
                 Configure email notifications (Resend)
               </CardDescription>

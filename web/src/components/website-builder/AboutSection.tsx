@@ -245,7 +245,7 @@ export function AboutSection({ data, onChange }: AboutSectionProps) {
                 <p className="mb-4 text-muted-foreground">
                   {data.description || "Your description will appear here..."}
                 </p>
-                {data.features.length > 0 && (
+                {data && data.features?.length > 0 && (
                   <ul className="space-y-2">
                     {data.features.map((feature, index) => (
                       <li key={index} className="flex items-center gap-2">

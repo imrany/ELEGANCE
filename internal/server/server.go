@@ -78,6 +78,13 @@ func (s *Server) setupRoutes() {
 	// API v1 routes
 	api := s.router.Group("/api")
 	{
+		// website builder endpoints (public)
+		websiteBuilder := api.Group("/website-builder")
+		{
+			websiteBuilder.GET("", s.handler.GetAllWebsiteConfig)
+			websiteBuilder.GET("/:key", s.handler.GetWebsiteConfig)
+		}
+
 		// Auth endpoints (public)
 		authHandler := handlers.NewAuthHandler(s.db, s.config.JWTSecret)
 		auth := api.Group("/auth")
@@ -163,8 +170,6 @@ func (s *Server) setupRoutes() {
 			admin.PUT("/users", adminHandler.UpdateUser)
 
 			// website-builder
-			admin.GET("/website-builder", adminHandler.GetAllWebsiteConfig)
-			admin.GET("/website-builder/:key", adminHandler.GetWebsiteConfig)
 			admin.PUT("/website-builder/:key", adminHandler.UpdateWebsiteSetting)
 
 			// Images management
