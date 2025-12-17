@@ -82,13 +82,13 @@ func (s *Server) setupRoutes() {
 	// static assets
 	s.router.Static("/uploads", "./uploads")
 
-	// Health check
-	s.router.GET("/health", s.handleHealth)
-
 	// API v1 routes
 	api := s.router.Group("/api")
 	{
 		api.GET("", s.handleRoot)
+
+		// Health check
+		api.GET("/health", s.handleHealth)
 
 		// website builder endpoints (public) - for frontend display
 		websiteBuilder := api.Group("/website-builder")
@@ -272,7 +272,7 @@ func (s *Server) handleRoot(c *gin.Context) {
 		"message": "ELEGANCE API",
 		"version": "1.0.0",
 		"endpoints": map[string]string{
-			"health":          "GET /health",
+			"health":          "GET /api/health",
 			"categories":      "GET /api/categories",
 			"products":        "GET /api/products",
 			"orders":          "POST /api/orders, GET /api/orders/:id, DELETE /api/orders/:id, PUT /api/orders/:id, PATCH /api/orders/:id, GET /api/orders",
@@ -288,7 +288,7 @@ func (s *Server) handleRoot(c *gin.Context) {
 func (s *Server) Start() error {
 	addr := fmt.Sprintf("%s:%d", s.config.Server.Host, s.config.Server.Port)
 	log.Printf("Server starting on %s", addr)
-	log.Printf("Health check: http://%s/health", addr)
+	log.Printf("Health check: http://%s/api/health", addr)
 	log.Printf("API endpoint: http://%s/api", addr)
 	return s.router.Run(addr)
 }
