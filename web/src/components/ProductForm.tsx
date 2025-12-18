@@ -15,6 +15,7 @@ import {
 import { Switch } from "./ui/switch";
 import { Button } from "./ui/button";
 import { Upload, X, Loader2, Image as ImageIcon } from "lucide-react";
+import { formatDate } from "date-fns";
 
 const CACHE_KEY = "product_form_draft";
 
@@ -59,7 +60,12 @@ export function ProductForm({
     colors: product?.colors?.join(", ") || cachedData?.colors || "",
     stock: product?.stock || cachedData?.stock || 0,
     featured: product?.featured || cachedData?.featured || false,
-    is_new: product?.is_new || cachedData?.is_new || false,
+    is_new:
+      product?.category_name === "New Arrivals" ||
+      cachedData?.category_name === "New Arrivals" ||
+      product?.is_new ||
+      cachedData?.is_new ||
+      false,
   });
 
   useEffect(() => {
@@ -80,7 +86,12 @@ export function ProductForm({
       colors: product?.colors?.join(", ") || cachedData?.colors || "",
       stock: product?.stock || cachedData?.stock || 0,
       featured: product?.featured || cachedData?.featured || false,
-      is_new: product?.is_new || cachedData?.is_new || false,
+      is_new:
+        product?.category_name === "New Arrivals" ||
+        cachedData?.category_name === "New Arrivals" ||
+        product?.is_new ||
+        cachedData?.is_new ||
+        false,
     });
   }, [product]);
 
@@ -184,7 +195,7 @@ export function ProductForm({
           .filter(Boolean),
         stock: formData.stock,
         featured: formData.featured,
-        is_new: formData.is_new,
+        is_new: formData.category_name === "New Arrivals" || formData.is_new,
       };
 
       if (product) {
@@ -499,14 +510,16 @@ export function ProductForm({
         <Label htmlFor="category">Category</Label>
         <Select
           value={formData.category_id}
-          onValueChange={(value) =>
-            setFormData({
-              ...formData,
+          onValueChange={(value) => {
+            const selectedCat = categories.find((c) => c.id === value);
+            setFormData((prev) => ({
+              ...prev,
               category_id: value,
-              category_name:
-                categories.find((cat) => cat.id === value)?.name || "",
-            })
-          }
+              category_name: selectedCat?.name || "",
+              // Force is_new to true if it's the new-arrival category
+              is_new: selectedCat?.name === "New Arrivals" ? true : prev.is_new,
+            }));
+          }}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select category" />
@@ -562,7 +575,10 @@ export function ProductForm({
         <div className="flex items-center gap-2">
           <Switch
             id="is_new"
-            checked={formData.is_new}
+            checked={
+              formData.category_name === "New Arrivals" || formData.is_new
+            }
+            disabled={formData.category_name === "New Arrivals"}
             onCheckedChange={(checked) =>
               setFormData({ ...formData, is_new: checked })
             }

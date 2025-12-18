@@ -14,10 +14,12 @@ export default function CategoryPage() {
 
   const category = categories?.find((cat) => cat.slug === slug);
 
-  const { data: products, isLoading } = useProducts({
-    is_new: slug === "new-arrivals" && "true",
-    category_id: category?.id || undefined,
-  });
+  const isNewArrivals = slug === "new-arrivals";
+  const queryParams = {
+    is_new: isNewArrivals ? "true" : undefined,
+    ...(!isNewArrivals && category?.id ? { category_id: category.id } : {}),
+  };
+  const { data: products, isLoading } = useProducts(queryParams);
 
   useEffect(() => {
     scrollTo({

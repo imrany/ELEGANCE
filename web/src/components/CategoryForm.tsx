@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, X, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface CategoryFormProps {
   category?: Category | null;
@@ -251,6 +252,12 @@ export function CategoryForm({ category, onSuccess }: CategoryFormProps) {
           required
           disabled={isLoading}
         />
+        {formData.name === "New Arrivals" ||
+        formData.slug === "new-arrivals" ? (
+          <p className="text-xs text-destructive">
+            Category name cannot be "New Arrivals"
+          </p>
+        ) : null}
       </div>
 
       {/* Slug */}
@@ -273,7 +280,12 @@ export function CategoryForm({ category, onSuccess }: CategoryFormProps) {
       <div className="space-y-3">
         <Label>Category Image (Optional)</Label>
         {formData.image_url ? (
-          <div className="relative aspect-video w-full max-w-sm overflow-hidden rounded-lg border border-border bg-secondary">
+          <div
+            className={cn(
+              "relative aspect-video w-full max-w-sm overflow-hidden rounded-lg border border-border bg-secondary",
+              `${isLoading || formData.name === "New Arrivals" || formData.slug === "new-arrivals" ? "opacity-50 cursor-not-allowed" : ""}`,
+            )}
+          >
             {uploadingImage ? (
               <div className="flex h-full w-full items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -303,7 +315,12 @@ export function CategoryForm({ category, onSuccess }: CategoryFormProps) {
               type="file"
               accept="image/*"
               onChange={handleImageUpload}
-              disabled={uploadingImage || isLoading}
+              disabled={
+                uploadingImage ||
+                isLoading ||
+                formData.name === "New Arrivals" ||
+                formData.slug === "new-arrivals"
+              }
               className="hidden"
               id="category-image-upload"
             />
@@ -344,7 +361,11 @@ export function CategoryForm({ category, onSuccess }: CategoryFormProps) {
           }
           placeholder="Brief description of this category..."
           rows={4}
-          disabled={isLoading}
+          disabled={
+            isLoading ||
+            formData.name === "New Arrivals" ||
+            formData.slug === "new-arrivals"
+          }
         />
       </div>
 
@@ -362,8 +383,13 @@ export function CategoryForm({ category, onSuccess }: CategoryFormProps) {
         )}
         <Button
           type="submit"
-          disabled={isLoading || uploadingImage}
-          className="flex-1 sm:flex-initial"
+          className="flex-1 sm:flex-initial disabled:cursor-not-allowed"
+          disabled={
+            isLoading ||
+            uploadingImage ||
+            formData.name === "New Arrivals" ||
+            formData.slug === "new-arrivals"
+          }
         >
           {isLoading ? (
             <>

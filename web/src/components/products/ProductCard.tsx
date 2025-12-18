@@ -14,7 +14,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
 
   return (
     <Link
-      to={`/product/${product.slug}`}
+      to={`/products/${product.slug}`}
       className={cn("group card-luxury block", className)}
     >
       <div className="relative aspect-[3/4] overflow-hidden bg-muted">

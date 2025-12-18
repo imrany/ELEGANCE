@@ -109,7 +109,7 @@ export interface WebsiteConfig {
   key: WebsiteSettingKey;
   value: SiteSettingValue;
   createdAt: string; // Assuming ISO 8601 string for time.Time
-  updatedAt: string; // Assuming ISO 8601 string for time.Time
+  updatedAt: string;
 }
 
 export interface User {

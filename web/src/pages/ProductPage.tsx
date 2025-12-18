@@ -87,27 +87,18 @@ export default function ProductPage() {
   return (
     <Layout>
       {/* Breadcrumb */}
-      <div className="border-b border-border">
-        <div className="container py-4">
-          <nav className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Link to="/" className="hover:text-foreground">
-              Home
-            </Link>
-            <ChevronRight className="h-4 w-4" />
-            {product.category_id && (
-              <>
-                <Link
-                  to={`/category/${product.category_id}`}
-                  className="hover:text-foreground"
-                >
-                  Category
-                </Link>
-                <ChevronRight className="h-4 w-4" />
-              </>
-            )}
-            <span className="text-foreground">{product.name}</span>
-          </nav>
-        </div>
+      <div className="container py-4">
+        <nav className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Link to="/" className="hover:text-foreground">
+            Home
+          </Link>
+          <ChevronRight className="h-4 w-4" />
+          <Link to={`/products`} className="hover:text-foreground">
+            Products
+          </Link>
+          <ChevronRight className="h-4 w-4" />
+          <span className="text-foreground">{product.name}</span>
+        </nav>
       </div>
 
       <div className="container py-12">

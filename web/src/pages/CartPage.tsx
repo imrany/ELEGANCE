@@ -69,7 +69,7 @@ export default function CartPage() {
                       <div>
                         <h3 className="font-medium text-foreground">
                           <Link
-                            to={`/product/${item.product.slug}`}
+                            to={`/products/${item.product.slug}`}
                             className="hover:text-accent"
                           >
                             {item.product.name}

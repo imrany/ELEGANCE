@@ -34,11 +34,14 @@ export function Header() {
   const navigate = useNavigate();
   const { categories, websiteConfig } = useGeneralContext();
   const store = websiteConfig?.store;
-  const navLinks =
-    categories?.map((category) => ({
+  const navLinks = [
+    ...(categories?.map((category) => ({
       name: category.name,
       href: `/category/${category.slug}`,
-    })) || null;
+    })) || []),
+    { name: "New Arrivals", href: "/category/new-arrivals" },
+  ];
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       {/* Top bar */}
