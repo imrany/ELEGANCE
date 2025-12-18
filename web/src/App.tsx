@@ -29,7 +29,6 @@ import { api } from "./lib/api";
 import UsersPage from "./pages/admin/UsersPage";
 import AccountPage from "./pages/AccountPage";
 import WebsiteBuilder from "./pages/admin/website-builder/WebsiteBuilder";
-import HomePage from "./pages/admin/website-builder/HomePage";
 import { GeneralProvider } from "./contexts/GeneralContext";
 import AboutUs from "./pages/AboutUs";
 

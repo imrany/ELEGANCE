@@ -311,7 +311,7 @@ export default function SettingsPage() {
                     id="announcement"
                     name="announcement"
                     rows={2}
-                    maxLength={155}
+                    maxLength={45}
                     defaultValue={store?.announcement || ""}
                     placeholder={store?.announcement || "Welcome to ÉLÉGANCE!"}
                     required
