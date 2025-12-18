@@ -1,2 +1,2 @@
-DROP TABLE website_settings_config;
-DROP TABLE site_settings;
+DROP TABLE IF EXISTS website_settings_config;
+DROP TABLE IF EXISTS site_settings;

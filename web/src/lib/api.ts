@@ -89,6 +89,33 @@ export interface WhatsappType {
   message: string;
 }
 
+export type MpesaSettlementType = "till" | "paybill";
+
+export interface MpesaType {
+  /** The settlement method chosen by the merchant */
+  type: MpesaSettlementType;
+  /** The 10-digit Kenyan phone number registered for M-Pesa notifications */
+  phone: string;
+
+  /**
+   * 6-7 digit number for "Buy Goods and Services".
+   * Required only if type is "till".
+   */
+  till_number?: string;
+
+  /**
+   * The Business Shortcode for the Paybill.
+   * Required only if type is "paybill".
+   */
+  paybill_number?: string;
+
+  /**
+   * The specific account identifier (e.g., "ONLINE-STORE").
+   * Required only if type is "paybill".
+   */
+  account_number?: string;
+}
+
 export interface SectionData {
   hero?: HeroType;
   about?: AboutType;
@@ -100,6 +127,7 @@ export interface SectionData {
   store: StoreType;
   smtp: SmtpType;
   whatsapp: WhatsappType;
+  mpesa: MpesaType;
 }
 
 export type WebsiteSettingKey = keyof SectionData;

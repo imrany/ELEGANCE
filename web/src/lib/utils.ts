@@ -202,6 +202,13 @@ export const DEFAULT_CONFIG: SectionData = {
     phone: "",
     message: "",
   },
+  mpesa: {
+    type: "till",
+    phone: "",
+    till_number: "",
+    paybill_number: "",
+    account_number: "",
+  },
 };
 
 export const faqCategories = [

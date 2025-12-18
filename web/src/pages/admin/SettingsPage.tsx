@@ -25,6 +25,8 @@ import {
   Loader2,
   X,
   MailQuestionMarkIcon,
+  CreditCard,
+  Phone,
 } from "lucide-react";
 import { useGeneralContext } from "@/contexts/GeneralContext";
 
@@ -38,9 +40,19 @@ export default function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { websiteConfig, saveWebsiteConfig: $saveWebsiteConfig } =
     useGeneralContext();
+  const mpesa = websiteConfig?.mpesa;
   const store = websiteConfig?.store;
   const smtp = websiteConfig?.smtp;
   const whatsapp = websiteConfig?.whatsapp;
+
+  const [mpesaType, setMpesaType] = useState<"till" | "paybill">(
+    mpesa?.type || "till",
+  );
+
+  // Sync state when config loads
+  useEffect(() => {
+    if (mpesa?.type) setMpesaType(mpesa.type);
+  }, [mpesa?.type]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const saveWebsiteConfig = (key: WebsiteSettingKey, value: any) => {
@@ -181,11 +193,12 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="store" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           {[
             { value: "store", icon: Store, label: "Store" },
             { value: "whatsapp", icon: MessageCircle, label: "WhatsApp" },
             { value: "smtp", icon: MailQuestionMarkIcon, label: "SMTP" },
+            { value: "mpesa", icon: CreditCard, label: "M-Pesa" },
           ].map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
               <tab.icon className="mr-2 h-4 w-4" />
@@ -318,6 +331,243 @@ export default function SettingsPage() {
                   />
                 </div>
 
+                <Button type="submit" disabled={$saveWebsiteConfig.isPending}>
+                  {$saveWebsiteConfig.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* M-Pesa Settings */}
+        <TabsContent value="mpesa">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                M-Pesa Configuration
+              </CardTitle>
+              <CardDescription>
+                Configure how customers pay you via M-Pesa. Choose between Buy
+                Goods (Till Number) or Paybill.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.currentTarget);
+
+                  const config = {
+                    type: mpesaType,
+                    phone: formData.get("phone") as string,
+                    till_number: formData.get("till_number") as string,
+                    paybill_number: formData.get("paybill_number") as string,
+                    account_number: formData.get("account_number") as string,
+                  };
+
+                  if (mpesaType === "till") {
+                    config.till_number = formData.get("till_number") as string;
+                  } else {
+                    config.paybill_number = formData.get(
+                      "paybill_number",
+                    ) as string;
+                    config.account_number = formData.get(
+                      "account_number",
+                    ) as string;
+                  }
+
+                  saveWebsiteConfig("mpesa", config);
+                }}
+                className="space-y-6"
+              >
+                {/* Settlement Method Selection */}
+                <div className="space-y-3">
+                  <Label className="text-base">Settlement Method</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Choose how you want to receive payments from customers
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => setMpesaType("till")}
+                      className={`
+                        relative flex flex-col items-start gap-2 rounded-lg border-2 p-4 text-left transition-all
+                        ${
+                          mpesaType === "till"
+                            ? " border-green-600 bg-primary/5"
+                            : "border-border hover:border-primary/50 hover:bg-secondary/50"
+                        }
+                      `}
+                    >
+                      {mpesaType === "till" && (
+                        <div className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-green-600">
+                          <svg
+                            className="h-3 w-3 text-primary-foreground"
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <Store className="h-5 w-5 text-primary" />
+                        <span className="font-semibold">Buy Goods (Till)</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Best for retail shops and small businesses. Customers
+                        pay directly to your till number.
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setMpesaType("paybill")}
+                      className={`
+                        relative flex flex-col items-start gap-2 rounded-lg border-2 p-4 text-left transition-all
+                        ${
+                          mpesaType === "paybill"
+                            ? "border-green-600 bg-primary/5"
+                            : "border-border hover:border-primary/50 hover:bg-secondary/50"
+                        }
+                      `}
+                    >
+                      {mpesaType === "paybill" && (
+                        <div className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-green-600">
+                          <svg
+                            className="h-3 w-3 text-primary-foreground"
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-5 w-5 text-primary" />
+                        <span className="font-semibold">Paybill</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Best for companies. Customers pay to paybill number with
+                        account reference.
+                      </p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* M-Pesa Registered Number */}
+                <div className="space-y-2">
+                  <Label htmlFor="mpesa-phone">
+                    M-Pesa Registered Number *
+                  </Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="mpesa-phone"
+                      name="phone"
+                      type="tel"
+                      placeholder="0712345678 or 254712345678"
+                      defaultValue={mpesa?.phone}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    The phone number registered with your M-Pesa business
+                    account
+                  </p>
+                </div>
+
+                {/* Conditional Fields Based on Type */}
+                {mpesaType === "till" ? (
+                  <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <Label htmlFor="till-number">Till Number *</Label>
+                    <Input
+                      id="till-number"
+                      name="till_number"
+                      placeholder="e.g. 123456"
+                      defaultValue={mpesa?.till_number}
+                      maxLength={7}
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Your 6-7 digit Buy Goods Till Number. Customers will see
+                      this when making payments.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="space-y-2">
+                      <Label htmlFor="paybill-number">
+                        Paybill Business Number *
+                      </Label>
+                      <Input
+                        id="paybill-number"
+                        name="paybill_number"
+                        placeholder="e.g. 400200"
+                        defaultValue={mpesa?.paybill_number}
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Your registered Paybill Business Number
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="account-number">
+                        Account Number / Reference *
+                      </Label>
+                      <Input
+                        id="account-number"
+                        name="account_number"
+                        placeholder="e.g. SHOP-123 or Account Name"
+                        defaultValue={mpesa?.account_number}
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        The account number or reference customers should use
+                        when paying
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Info Alert */}
+                <Alert className="border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950">
+                  <svg
+                    className="h-4 w-4 text-blue-600 dark:text-blue-400"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <AlertDescription className="text-sm text-blue-900 dark:text-blue-100">
+                    <strong>Important:</strong> Make sure the information you
+                    provide is accurate. Customers will use these details to
+                    make payments. Incorrect information may result in failed
+                    transactions.
+                  </AlertDescription>
+                </Alert>
+
+                {/* Submit Button */}
                 <Button type="submit" disabled={$saveWebsiteConfig.isPending}>
                   {$saveWebsiteConfig.isPending ? (
                     <>

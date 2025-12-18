@@ -27,11 +27,14 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useGeneralContext } from "@/contexts/GeneralContext";
 
 export default function OrderConfirmationPage() {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(30);
+  const { websiteConfig } = useGeneralContext();
+  const mpesa = websiteConfig?.mpesa;
 
   // Fetch order details
   const {
@@ -403,6 +406,29 @@ export default function OrderConfirmationPage() {
                       {order.customer.phone_number}
                     </p>
                   </div>
+                  {mpesa && (
+                    <div className="flex flex-col justify-center items-start gap-2 ml-auto">
+                      {mpesa.type === "till" ? (
+                        <p className="text-sm text-green-600">
+                          Till Number:{" "}
+                          <span className="text-foreground">
+                            {mpesa.till_number}
+                          </span>
+                        </p>
+                      ) : (
+                        <p className="text-sm text-green-600">
+                          Paybill Number:{" "}
+                          <span className="text-foreground">
+                            {mpesa.paybill_number}
+                          </span>
+                        </p>
+                      )}
+                      <p className="text-sm text-green-600">
+                        M-Pesa No:{" "}
+                        <span className="text-foreground">{mpesa.phone}</span>
+                      </p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

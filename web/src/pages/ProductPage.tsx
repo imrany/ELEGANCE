@@ -74,14 +74,24 @@ export default function ProductPage() {
       selectedSize || undefined,
       selectedColor || undefined,
     );
-    toast.success("Added to cart", {
-      duration: 3000,
-      description: `${product.name} has been added to your shopping cart.`,
+    let navigationTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const loadingToastId = toast.loading("Redirecting to cart...", {
       action: {
-        label: "View Cart",
-        onClick: () => navigate("/cart"),
+        label: "Cancel",
+        onClick: () => {
+          if (navigationTimeoutId !== null) {
+            clearTimeout(navigationTimeoutId);
+          }
+          toast.dismiss(loadingToastId);
+        },
       },
     });
+
+    navigationTimeoutId = setTimeout(() => {
+      toast.dismiss(loadingToastId);
+      navigate("/cart");
+    }, 2000);
   };
 
   return (

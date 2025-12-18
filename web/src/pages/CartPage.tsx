@@ -32,7 +32,7 @@ export default function CartPage() {
               Discover our collection and add some items to your cart.
             </p>
             <Button asChild className="mt-6">
-              <Link to="/">Continue Shopping</Link>
+              <Link to="/products">Continue Shopping</Link>
             </Button>
           </div>
         </div>

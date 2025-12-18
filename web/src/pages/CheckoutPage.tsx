@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
+import { useGeneralContext } from "@/contexts/GeneralContext";
 
 interface CheckoutFormData {
   firstName: string;
@@ -47,6 +48,8 @@ export default function CheckoutPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { items, subtotal, clearCart } = useCart();
+  const { websiteConfig } = useGeneralContext();
+  const mpesa = websiteConfig?.mpesa;
 
   // Get cached form data
   const getCachedData = () => {
@@ -402,6 +405,29 @@ export default function CheckoutPage() {
                         Secure mobile payment
                       </p>
                     </div>
+                    {mpesa && (
+                      <div className="flex flex-col justify-center items-start gap-2 ml-auto">
+                        {mpesa.type === "till" ? (
+                          <p className="text-sm text-green-600">
+                            Till Number:{" "}
+                            <span className="text-foreground">
+                              {mpesa.till_number}
+                            </span>
+                          </p>
+                        ) : (
+                          <p className="text-sm text-green-600">
+                            Paybill Number:{" "}
+                            <span className="text-foreground">
+                              {mpesa.paybill_number}
+                            </span>
+                          </p>
+                        )}
+                        <p className="text-sm text-green-600">
+                          M-Pesa No:{" "}
+                          <span className="text-foreground">{mpesa.phone}</span>
+                        </p>
+                      </div>
+                    )}
                   </div>
                   <p className="mt-3 text-xs text-muted-foreground">
                     You'll receive an M-Pesa prompt on your phone to complete
