@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  elegance:
+    image: ghcr.io/imrany/elegance:latest
+    container_name: elegance
+    ports:
+      - "8082:8082"
+    volumes:
+      - ./elegance:/var/opt/elegance
+    environment:
+      - DB_TYPE=sqlite
+      - DATABASE_URL=/var/opt/elegance/elegance.db
+      - PORT=8082
+      - HOST=0.0.0.0
+      - UPLOAD_DIR=/var/opt/elegance/uploads
+      - JWT_SECRET=${JWT_SECRET:-change_me_in_production}
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8082/api/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s

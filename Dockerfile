@@ -80,7 +80,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8082/api/health || exit 1
 
 # Set environment variables
-ENV UPLOAD_DIR=/opt/elegance/uploads
+ENV UPLOAD_DIR=/var/opt/elegance/uploads
 ENV PORT=8082
 
 LABEL org.opencontainers.image.title="Elegance" \
