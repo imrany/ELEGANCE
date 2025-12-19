@@ -19,7 +19,7 @@ export function HeroSection() {
           alt="Hero Background Image"
           className="h-full w-full object-cover"
         />
-        {hero.overlay && hero.background_image && (
+        {hero.overlay && (
           <div
             className="absolute inset-0 bg-black"
             style={{ opacity: hero.overlay_opacity || 0.5 }}
