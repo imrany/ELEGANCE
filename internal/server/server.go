@@ -2,12 +2,14 @@ package server
 
 import (
 	"embed"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"log"
 	"net/http"
 	"path/filepath"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -15,6 +17,7 @@ import (
 	"github.com/imrany/elegance/internal/database"
 	"github.com/imrany/elegance/internal/handlers"
 	"github.com/imrany/elegance/internal/middleware"
+	"github.com/imrany/elegance/internal/models"
 	"github.com/spf13/viper"
 )
 
@@ -32,12 +35,27 @@ type Config struct {
 	JWTSecret string
 }
 
+// SEOMetadata holds the metadata for SEO
+type SEOMetadata struct {
+	Title       string
+	Description string
+	Keywords    string
+	OGImage     string
+	Favicon     string
+	Author      string
+	URL         string
+	Type        string
+	TwitterCard string
+	TwitterSite string
+}
+
 // Server represents the HTTP server
 type Server struct {
-	config  *Config
-	router  *gin.Engine
-	handler *handlers.Handler
-	db      database.DB
+	config    *Config
+	router    *gin.Engine
+	handler   *handlers.Handler
+	db        database.DB
+	indexTmpl *template.Template
 }
 
 // New creates a new server instance
@@ -67,11 +85,24 @@ func New(cfg *Config, db database.DB) *Server {
 
 	handler := handlers.New(db)
 
+	// Load and parse index.html from embedded dist
+	indexContent, err := dist.ReadFile("dist/index.html")
+	if err != nil {
+		log.Fatalf("Critical: Could not read dist/index.html: %v", err)
+	}
+
+	// Create template (use Delims if your React code uses {{}})
+	tmpl, err := template.New("index").Parse(string(indexContent))
+	if err != nil {
+		log.Fatalf("Critical: Failed to parse index template: %v", err)
+	}
+
 	srv := &Server{
-		config:  cfg,
-		router:  router,
-		handler: handler,
-		db:      db,
+		config:    cfg,
+		router:    router,
+		handler:   handler,
+		db:        db,
+		indexTmpl: tmpl,
 	}
 
 	srv.setupRoutes()
@@ -80,8 +111,12 @@ func New(cfg *Config, db database.DB) *Server {
 
 // setupRoutes configures all API routes
 func (s *Server) setupRoutes() {
-	// static assets
+	// Static assets
 	s.router.Static("/uploads", viper.GetString("upload-dir"))
+
+	// SEO routes
+	s.router.GET("/sitemap.xml", s.serveSitemap)
+	s.router.GET("/robots.txt", s.serveRobotsTxt)
 
 	// API v1 routes
 	api := s.router.Group("/api")
@@ -147,7 +182,6 @@ func (s *Server) setupRoutes() {
 
 			// Orders
 			authenticated.POST("/orders", s.handler.CreateOrder)
-			// /api/orders?key=user_id&&value=123
 			authenticated.GET("/orders", s.handler.GetOrdersByOption)
 			authenticated.DELETE("/orders/:id", s.handler.DeleteOrder)
 			authenticated.PUT("/orders/:id", s.handler.UpdateOrder)
@@ -157,7 +191,6 @@ func (s *Server) setupRoutes() {
 		admin := api.Group("/admin")
 		admin.Use(middleware.AuthMiddleware(s.config.JWTSecret), middleware.AdminOnly())
 		{
-			// Add admin-only routes here
 			adminHandler := handlers.NewAdminHandler(s.db, s.config.JWTSecret)
 
 			// User management
@@ -183,13 +216,14 @@ func (s *Server) setupRoutes() {
 			admin.PUT("/users/password", adminHandler.UpdateUserPassword)
 			admin.PUT("/users", adminHandler.UpdateUser)
 
-			// Website builder management (admin endpoints)
+			// Website builder management
 			admin.PUT("/website-builder/:key", adminHandler.UpdateWebsiteSetting)
 
 			// Images management
 			admin.POST("/upload/image", adminHandler.UploadImage)
 			admin.DELETE("/images/:filename", adminHandler.DeleteImage)
 
+			// Pages management
 			admin.POST("/pages", s.handler.CreatePage)
 			admin.PUT("/pages/:id", s.handler.UpdatePage)
 			admin.DELETE("/pages/:id", s.handler.DeletePage)
@@ -202,6 +236,141 @@ func (s *Server) setupRoutes() {
 
 	// Frontend SPA Routing - Serve embedded dist folder
 	s.setupSPARouting()
+}
+
+// serveStaticIndex serves the static index.html with SEO
+func (s *Server) serveStaticIndex(c *gin.Context) {
+	// 1. Fetch Global Configs
+	var seo models.SEOConfig
+	var store models.StoreConfig
+
+	if val, err := s.db.GetWebsiteSettingByKey("seo"); err == nil {
+		json.Unmarshal([]byte(val.Value), &seo)
+	}
+	if val, err := s.db.GetWebsiteSettingByKey("store"); err == nil {
+		json.Unmarshal([]byte(val.Value), &store)
+	}
+
+	// 2. Setup Default Metadata
+	scheme := "https"
+	if c.Request.TLS == nil {
+		scheme = "http"
+	}
+	baseURL := scheme + "://" + c.Request.Host
+
+	metadata := SEOMetadata{
+		Title:       seo.Title,
+		Description: seo.Description,
+		Keywords:    seo.Keywords,
+		OGImage:     baseURL + seo.OGImage,
+		Favicon:     seo.Favicon,
+		Author:      store.Name,
+		URL:         baseURL + c.Request.URL.Path,
+		Type:        "website",
+	}
+
+	// 3. Dynamic Product/Page Logic
+	path := c.Request.URL.Path
+	if strings.HasPrefix(path, "/products/") {
+		slug := strings.TrimPrefix(path, "/products/")
+		if product, err := s.db.GetProductBySlug(slug); err == nil {
+			metadata.Title = product.Name + " | " + store.Name
+			if product.Description != nil {
+				metadata.Description = *product.Description
+			}
+			if len(product.Images) > 0 {
+				metadata.OGImage = product.Images[0]
+			}
+		}
+	} else if path != "/" && !strings.HasPrefix(path, "/admin") {
+		// Handle custom CMS pages
+		slug := strings.TrimPrefix(path, "/")
+		if page, err := s.db.GetPage(slug); err == nil {
+			metadata.Title = page.MetaTitle
+			metadata.Description = page.MetaDescription
+			if page.OGImage != "" {
+				metadata.OGImage = page.OGImage
+			}
+		}
+	}
+
+	// 4. Set Headers and Execute Template
+	c.Header("Content-Type", "text/html; charset=utf-8")
+	err := s.indexTmpl.Execute(c.Writer, metadata)
+	if err != nil {
+		log.Printf("Template execution error: %v", err)
+		c.Status(http.StatusInternalServerError)
+	}
+}
+
+// ServeSitemap generates and serves sitemap.xml
+func (s *Server) serveSitemap(c *gin.Context) {
+	scheme := "https"
+	if c.Request.TLS == nil {
+		scheme = "http"
+	}
+	baseURL := scheme + "://" + c.Request.Host
+
+	// Start sitemap XML
+	xml := `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+	<url>
+		<loc>` + baseURL + `/</loc>
+		<changefreq>daily</changefreq>
+		<priority>1.0</priority>
+	</url>`
+
+	// Add product pages
+	products, err := s.db.GetProducts(models.ProductFilters{})
+	if err == nil {
+		for _, product := range products {
+			xml += `
+	<url>
+		<loc>` + baseURL + `/product/` + product.Slug + `</loc>
+		<changefreq>weekly</changefreq>
+		<priority>0.8</priority>
+	</url>`
+		}
+	}
+
+	// Add category pages
+	categories, err := s.db.GetCategories()
+	if err == nil {
+		for _, category := range categories {
+			xml += `
+	<url>
+		<loc>` + baseURL + `/category/` + category.Slug + `</loc>
+		<changefreq>weekly</changefreq>
+		<priority>0.7</priority>
+	</url>`
+		}
+	}
+
+	xml += `
+</urlset>`
+
+	c.Header("Content-Type", "application/xml; charset=utf-8")
+	c.String(http.StatusOK, xml)
+}
+
+// serveRobotsTxt serves robots.txt
+func (s *Server) serveRobotsTxt(c *gin.Context) {
+	scheme := "https"
+	if c.Request.TLS == nil {
+		scheme = "http"
+	}
+	baseURL := scheme + "://" + c.Request.Host
+
+	robots := `User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /auth/
+
+Sitemap: ` + baseURL + `/sitemap.xml`
+
+	c.Header("Content-Type", "text/plain; charset=utf-8")
+	c.String(http.StatusOK, robots)
 }
 
 // setupSPARouting configures the SPA routing for the embedded frontend
@@ -234,15 +403,8 @@ func (s *Server) setupSPARouting() {
 			return
 		}
 
-		// Not a static file, serve index.html for client-side routing
-		indexData, err := fs.ReadFile(distFS, "index.html")
-		if err != nil {
-			log.Printf("Failed to read index.html: %v", err)
-			c.Status(http.StatusInternalServerError)
-			return
-		}
-
-		c.Data(http.StatusOK, "text/html; charset=utf-8", indexData)
+		// For all other routes (SPA routes), serve index.html with dynamic SEO
+		s.serveStaticIndex(c)
 	})
 }
 
@@ -252,7 +414,7 @@ func isStaticFile(path string) bool {
 	staticExtensions := []string{
 		".js", ".css", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico",
 		".woff", ".woff2", ".ttf", ".eot", ".json", ".xml", ".txt",
-		".webp", ".mp4", ".webm", ".mp3", ".pdf", ".zip",
+		".webp", ".mp4", ".webm", ".mp3", ".pdf", ".zip", ".map",
 	}
 
 	for _, staticExt := range staticExtensions {
@@ -277,15 +439,17 @@ func (s *Server) handleHealth(c *gin.Context) {
 func (s *Server) handleRoot(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "ELEGANCE API",
-		"version": "1.0.0",
+		"version": "0.3.1",
 		"endpoints": map[string]string{
 			"health":          "GET /api/health",
 			"categories":      "GET /api/categories",
 			"products":        "GET /api/products",
-			"orders":          "POST /api/orders, GET /api/orders/:id, DELETE /api/orders/:id, PUT /api/orders/:id, PATCH /api/orders/:id, GET /api/orders",
+			"orders":          "POST /api/orders, GET /api/orders/:id, DELETE /api/orders/:id, PUT /api/orders/:id, GET /api/orders",
 			"settings":        "GET /api/settings/:key",
 			"auth":            "POST /api/auth/signup, POST /api/auth/signin",
 			"website-builder": "GET /api/website-builder, GET /api/website-builder/:key",
+			"sitemap":         "GET /sitemap.xml",
+			"robots":          "GET /robots.txt",
 		},
 		"documentation": "https://github.com/imrany/elegance",
 	})
@@ -294,8 +458,10 @@ func (s *Server) handleRoot(c *gin.Context) {
 // Start starts the HTTP server
 func (s *Server) Start() error {
 	addr := fmt.Sprintf("%s:%d", s.config.Server.Host, s.config.Server.Port)
-	log.Printf("Server starting on %s", addr)
-	log.Printf("Health check: http://%s/api/health", addr)
-	log.Printf("API endpoint: http://%s/api", addr)
+	log.Printf("🚀 Server starting on %s", addr)
+	log.Printf("📊 Health check: http://%s/api/health", addr)
+	log.Printf("🔌 API endpoint: http://%s/api", addr)
+	log.Printf("🗺️  Sitemap: http://%s/sitemap.xml", addr)
+	log.Printf("🤖 Robots: http://%s/robots.txt", addr)
 	return s.router.Run(addr)
 }

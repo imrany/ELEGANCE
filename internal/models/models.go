@@ -109,6 +109,15 @@ type ProductFilters struct {
 	Order      string
 }
 
+type StoreConfig struct {
+	Name                  string `json:"name"`
+	Currency              string `json:"currency"`
+	FreeDeliveryThreshold int    `json:"free_delivery_threshold"`
+	Logo                  string `json:"logo"`
+	Announcement          string `json:"announcement"`
+	Description           string `json:"description"`
+}
+
 type SetupStatus struct {
 	SetupComplete bool `json:"setup_complete" db:"setup_complete"`
 	HasAdmin      bool `json:"has_admin" db:"has_admin"`
@@ -152,4 +161,13 @@ type Page struct {
 // ReorderSectionsRequest represents the request body for reordering sections
 type ReorderSectionsRequest struct {
 	SectionIDs []string `json:"section_ids" binding:"required"`
+}
+
+// Seo
+type SEOConfig struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Keywords    string `json:"keywords"`
+	OGImage     string `json:"og_image"`
+	Favicon     string `json:"favicon"`
 }

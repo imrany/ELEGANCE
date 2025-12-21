@@ -1,28 +1,64 @@
 <!doctype html>
 <html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- TODO: Set the document title to the name of your application -->
-  <title>Luxury clothes fashion</title>
-  <meta name="description" content="Luxury clothes fashion" />
-  <meta name="author" content="imrany" />
+        <!-- Dynamic Title -->
+        <title>{{.Title}}</title>
 
-  <!-- TODO: Update og:title to match your application name -->
-  <meta property="og:title" content="Luxury clothes fashion" />
-  <meta property="og:description" content="Luxury clothes fashion" />
-  <meta property="og:type" content="website" />
-  <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+        <!-- SEO Meta Tags -->
+        <meta name="description" content="{{.Description}}" />
+        <meta name="keywords" content="{{.Keywords}}" />
+        <meta name="author" content="{{.Author}}" />
 
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:site" content="@matano_imran" />
-  <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-</head>
+        <!-- Favicon -->
+        {{if .Favicon}}
+        <link rel="icon" type="image/x-icon" href="{{.Favicon}}" />
+        <link rel="shortcut icon" type="image/x-icon" href="{{.Favicon}}" />
+        {{end}}
 
-<body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
-</body>
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="{{.Type}}" />
+        <meta property="og:url" content="{{.URL}}" />
+        <meta property="og:title" content="{{.Title}}" />
+        <meta property="og:description" content="{{.Description}}" />
+        <meta property="og:image" content="{{.OGImage}}" />
 
+        <!-- Twitter -->
+        <meta name="twitter:card" content="{{.TwitterCard}}" />
+        <meta name="twitter:url" content="{{.URL}}" />
+        <meta name="twitter:title" content="{{.Title}}" />
+        <meta name="twitter:description" content="{{.Description}}" />
+        <meta name="twitter:image" content="{{.OGImage}}" />
+        {{if .TwitterSite}}
+        <meta name="twitter:site" content="{{.TwitterSite}}" />
+        {{end}}
+
+        <!-- Additional SEO -->
+        <link rel="canonical" href="{{.URL}}" />
+        <meta name="robots" content="index, follow" />
+        <meta name="language" content="English" />
+        <meta name="revisit-after" content="7 days" />
+
+        <!-- Preconnect for performance -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+        <!-- JSON-LD Structured Data -->
+        <script type="application/ld+json">
+            {
+                "@context": "https://schema.org",
+                "@type": "WebSite",
+                "name": "{{.Title}}",
+                "description": "{{.Description}}",
+                "url": "{{.URL}}",
+                "image": "{{.OGImage}}"
+            }
+        </script>
+    </head>
+    <body>
+        <div id="root"></div>
+        <script type="module" src="/src/main.tsx"></script>
+    </body>
 </html>
